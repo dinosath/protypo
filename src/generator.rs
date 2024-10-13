@@ -200,14 +200,34 @@ impl Generator {
         })
     }
 
-    pub fn copy_files(&self, destination_dir: &PathBuf) -> Result<(), io::Error> {
-        if !destination_dir.is_dir() {
-            return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Destination directory is not a directory"));
+    fn get_values(&self, values: Value) -> Value {
+        let mut generator_values = self.values.clone();
+        generator_values.merge(&values.clone());
+
+        if let Some(generator_obj) = values.get(self.generator_yaml.name.clone()).and_then(|v| Some(v)) {
+            generator_values.merge(generator_obj);
         }
+        generator_values.clone()
+    }
+
+    pub fn copy_files(&self, values: Value) -> Result<(), io::Error> {
+        let generator_values = self.get_values(values);
+
+        let destination_dir_str = generator_values
+            .as_object()
+            .and_then(|obj| obj.get("outputFolder"))
+            .and_then(|val| val.as_str())
+            .unwrap_or(".");
+
+        let destination_dir: &PathBuf = &Path::new(destination_dir_str).to_path_buf();
+
 
         if !destination_dir.exists() {
             fs::create_dir_all(destination_dir)?;
             debug!("{} - Creating directory {:?}",self.key(), destination_dir.parent().unwrap());
+        }
+        if !destination_dir.is_dir() {
+            return Err(std::io::Error::new(std::io::ErrorKind::NotFound, format!("Destination directory {:?} is not a directory", destination_dir)));
         }
 
         if self.files.is_none() {
@@ -216,17 +236,42 @@ impl Generator {
         else {
             debug!("{} - Copying files to destination {:?}", self.key(), destination_dir);
             let base_path = Path::new(&self.base_path).join("files");
-            self.files.clone().unwrap().iter().for_each(|file| {
-                let file_path = Path::new(file);
-                let destination = construct_destination_path(&base_path, &file_path, destination_dir).unwrap();
-                fs::create_dir_all(destination.clone().parent().unwrap()).unwrap();
-                fs::copy(&file_path, &destination).unwrap();
-            });
+            for file in self.files.clone().unwrap() {
+                let file_path = Path::new(&file);
+                let destination = construct_destination_path(&base_path, &file_path, destination_dir)?;
+                let destination_parent = destination.parent().unwrap();
+
+                debug!("{} - Source file: {:?}", self.key(), file_path);
+                debug!("{} - Destination file: {:?}", self.key(), destination);
+                debug!("{} - Destination parent directory: {:?}", self.key(), destination_parent);
+
+                if !destination_parent.exists() {
+                    debug!("{} - Destination parent {:?} does not exist. It will be created.", self.key(), destination_parent);
+                    match fs::create_dir_all(destination_parent) {
+                        Ok(_) => debug!("{} - Successfully created destination parent directory: {:?}", self.key(), destination_parent),
+                        Err(e) => {
+                            error!("{} - Failed to create destination parent directory: {:?} with error: {:?}", self.key(), destination_parent, e);
+                            return Err(e);
+                        }
+                    }
+                }
+
+                match fs::copy(&file_path, &destination) {
+                    Ok(bytes_copied) => {
+                        debug!("{} - Successfully copied file {:?} to {:?}. Bytes copied: {}", self.key(), file_path, destination, bytes_copied);
+                    },
+                    Err(e) => {
+                        error!("{} - Failed to copy file {:?} to {:?}: {:?}", self.key(), file_path, destination, e);
+                        return Err(e);
+                    }
+                }
+
+            }
         }
 
         if let Some(dependencies) = &self.dependencies {
-            for dependency in dependencies {
-                dependency.copy_files(destination_dir)?;
+            for dependency in dependencies.iter() {
+                dependency.copy_files(generator_values.clone())?;
             }
         }
 
@@ -238,34 +283,23 @@ impl Generator {
         debug!("Generator name:{:?},version:{:?}, Start generating templates {:?}", self.generator_yaml.name, self.generator_yaml.version, self.templates);
 
 
-        let mut generator_values= self.values.clone();
-        debug!("generator_values: {:?}", serde_json::to_string_pretty(&generator_values));
-        debug!("values: {:?}", serde_json::to_string_pretty(&ctx));
+        let generator_values = self.get_values(ctx.values.clone());
 
-        if let Some(values_override) = ctx.values
-            .as_object()
-            .and_then(|value| value.get(self.generator_yaml.name.as_str())) {
-            generator_values.merge(values_override);
-        }
+        let generator_context = Context {
+            values: generator_values,
+            entities: ctx.entities.clone(),
+        };
 
-        debug!("generator_values: {:?}", serde_json::to_string_pretty(&generator_values));
-
-        let context = serde_json::to_value(ctx).unwrap();
-
-        let mut generator_context = json!({
-            "values": self.values,
-        });
-        generator_context.merge(&context);
-        debug!("generator_context: {:?}", serde_json::to_string_pretty(&generator_context));
+        let ctx =  &serde_json::to_value(generator_context.clone())?;
 
         if let Some(dependencies) = &self.dependencies {
             for dependency in dependencies {
                 debug!("Generating templates for dependency: {:?}", dependency.generator_yaml.name);
-                dependency.generate_templates(rrgen, ctx)?;
+                dependency.generate_templates(rrgen, &generator_context)?;
             }
         }
 
-        debug!("Generator name:{:?},version:{:?}, generator_context {:?}",self.generator_yaml.name, self.generator_yaml.version, serde_json::to_string_pretty(&generator_context));
+        debug!("Generator name:{:?},version:{:?}", self.generator_yaml.name, self.generator_yaml.version);
         if self.templates.is_none() || self.templates.clone().unwrap().is_empty() {
             debug!("There are no templates to generate");
         } else {
@@ -278,8 +312,8 @@ impl Generator {
                 .for_each(|file_path| {
                     let file_name = file_path.file_name().unwrap().to_str().unwrap();
                     let content = fs::read_to_string(file_path).unwrap();
-                    debug!("generating file_path:{:?}, file_name:{:?}",file_path, file_name);
-                    rrgen.generate(content.as_str(), &generator_context).unwrap();
+                    debug!("generator:{:?} generating file_path:{:?}, file_name:{:?}",self.key(),file_path, file_name);
+                    rrgen.generate(content.as_str(), ctx).unwrap();
                 });
         }
 

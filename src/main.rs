@@ -44,11 +44,10 @@ pub struct Dependency {
     repository: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Context {
     values: Value,
     entities: Value,
-    generate: Generate,
 }
 
 impl Default for Context {
@@ -56,7 +55,6 @@ impl Default for Context {
         Context{
             values: json!({}),
             entities: json!({}),
-            generate: Generate::default(),
         }
     }
 }
@@ -140,19 +138,6 @@ async fn main() -> Result<(), Error> {
         },
         Commands::Generate { name,version,uri,config_filepath , output_directory, generator_path, sets} => {
             let mut ctx = Context::default();
-            let output = match output_directory {
-                Some(out) => {
-                    if !out.exists() && out.is_dir() {
-                        fs::create_dir_all(out)?;
-                    } else {
-                        if !out.is_dir() {
-                            Err(io::Error::new(io::ErrorKind::NotFound, "Destination directory is not a directory"))?;
-                        }
-                    }
-                    ctx.generate.output=out.to_str().expect("Output directory is not string").to_string()
-                },
-                None => {},
-            };
 
             let mut values = json!({});
             for set in sets {
@@ -194,9 +179,8 @@ async fn main() -> Result<(), Error> {
                 }
             };
             let generator = Generator::from_directory(path.as_path()).await?;
-
-            generator.copy_files(&Path::new(ctx.generate.output.as_str()).to_path_buf())?;
-            println!("Loaded generator {}",generator.generator_yaml.name);
+            generator.copy_files(values)?;
+            debug!("copied files");
             let entities = generator.collect_entities();
             ctx.entities = entities;
             generator.generate_templates(&mut rrgen,&ctx)?;
