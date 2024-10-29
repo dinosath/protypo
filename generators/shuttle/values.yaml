@@ -1,0 +1,7 @@
+rrgen:
+  documentSeparator: "---\n"
+  frontmatterSeparator: "===\n"
+
+deployment:
+  shuttle:
+    runtimeVersion: "0.48"

@@ -1,0 +1,7 @@
+debug/
+target/
+.idea/
+.vscode/
+Cargo.lock
+**/*.rs.bk
+*.pdb

@@ -1,0 +1,54 @@
+{% import "_macros.tpl" as macros -%}
+
+{%- if features and 'graphql' in features  -%}
+{% set file_name = values.outputFolder ~ "/src/graphql/query_root.rs" %}
+to: {{file_name}}
+message: "File `{{file_name}}` was created successfully."
+injections:
+- into: {{ values.outputFolder }}/src/graphql/mod.rs
+  append: true
+  content: "pub mod query_root;"
+===
+use async_graphql::dynamic::*;
+use sea_orm::DatabaseConnection;
+use seaography::{Builder, BuilderContext};
+
+use crate::models::entities::*;
+
+lazy_static::lazy_static! { static ref CONTEXT: BuilderContext = BuilderContext::default(); }
+
+pub fn schema(
+    database: DatabaseConnection,
+    depth: usize,
+    complexity: usize,
+) -> Result<Schema, SchemaError> {
+    // Builder of Seaography query root
+    let mut builder = Builder::new(&CONTEXT, database.clone());
+    // Register SeaORM entities
+    seaography::register_entities!(
+        builder,
+        [
+            {% for entity_name,entity in entities -%}
+                {% if not entity.properties %}{% continue %}{% endif %}
+                {{ entity.title | snake_case }}{%- if not loop.last -%},{% endif -%}
+            {% endfor %}
+            {% set relations = macros::get_m2m_relations(entities=entities) | split(pat=",") -%}
+            {%- if relations and relations | length > 0 -%},{% endif %}
+            {% for relation in relations -%}
+                {{ relation | snake_case }}{%- if not loop.last -%},{% endif -%}
+            {% endfor %}
+        ]
+        
+    );
+    // Configure async GraphQL limits
+    let schema = builder
+        .schema_builder()
+        // The depth is the number of nesting levels of the field
+        .limit_depth(depth)
+        // The complexity is the number of fields in the query
+        .limit_complexity(complexity);
+    // Finish up with including SeaORM database connection
+    schema.data(database).finish()
+}
+
+{% endif %}

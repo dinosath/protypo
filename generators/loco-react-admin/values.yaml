@@ -1,0 +1,8 @@
+loco:
+  application:
+    name: erp
+  outputFolder: "./output"
+react-admin:
+  application:
+    name: erp
+  outputFolder: "./output/frontend"

@@ -1,0 +1,30 @@
+apiVersion: v1
+name: jdl
+version: 0.0.1
+description: Code generator for generating jdl files 
+keywords:
+  - jdl
+  - jhipster
+home: The URL of this projects home page (optional)
+sources:
+  - A list of URLs to source code for this project (optional)
+dependencies: # A list of the chart requirements (optional)
+  - name: jsonschema-commons
+    version: 0.1.0
+    repository: (optional) The repository URL ("https://example.com/charts") or alias ("@repo-name")
+    path: ../commons
+    tags: 
+      - jsonschema-commons
+      - jsonschema
+      - commons
+    import-values: # (optional)
+      - ImportValues holds the mapping of source values to parent key to be imported. Each item can be a string or pair of child/parent sublist items.
+    alias: (optional) Alias to be used for the chart. Useful when you have to add the same chart multiple times
+maintainers: # (optional)
+  - name: The maintainers name (required for each maintainer)
+    email: The maintainers email (optional for each maintainer)
+    url: A URL for the maintainer (optional for each maintainer)
+icon: A URL to an SVG or PNG image to be used as an icon (optional).
+deprecated: Whether this chart is deprecated (optional, boolean)
+annotations:
+  example: A list of annotations keyed by name (optional).

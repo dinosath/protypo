@@ -1,0 +1,48 @@
+to: "{{ values.outputFolder }}/src/bin/shuttle.rs"
+skip_exists: true
+message: "Shuttle deployment ready do use"
+injections:
+- into: {{ values.outputFolder }}/.cargo/config.toml
+  remove_lines: "loco ="
+  content: ""
+- into: {{ values.outputFolder }}/.cargo/config.toml
+  after: \[alias\]
+  content: "loco = \"run --bin {{ values.application.name }}-cli --\""
+- into: {{ values.outputFolder }}/Cargo.toml
+  before: \[dev-dependencies\]
+  content: |
+    [[bin]]
+    name = "{{ values.application.name }}"
+    path = "src/bin/shuttle.rs"
+- into: {{ values.outputFolder }}/Cargo.toml
+  after: \[dependencies\]
+  content: |
+    shuttle-axum = "{{ values.deployment.shuttle.runtimeVersion }}"
+    shuttle-runtime = { version = "{{ values.deployment.shuttle.runtimeVersion }}", default-features = false }
+    {% if with_db -%}
+    shuttle-shared-db = { version = "{{ values.deployment.shuttle.runtimeVersion }}", features = ["postgres"] }
+    {%- endif %}
+===
+use loco_rs::boot::{create_app, StartMode};
+use loco_rs::environment::Environment;
+use {{ values.application.name }}::app::App;
+{% if with_db %}use migration::Migrator;{% endif %}
+use shuttle_runtime::DeploymentMetadata;
+
+#[shuttle_runtime::main]
+async fn main(
+  {% if with_db %}#[shuttle_shared_db::Postgres] conn_str: String,{% endif %}
+  #[shuttle_runtime::Metadata] meta: DeploymentMetadata,
+) -> shuttle_axum::ShuttleAxum {
+    {% if with_db %}std::env::set_var("DATABASE_URL", conn_str);{% endif %}
+    let environment = match meta.env {
+        shuttle_runtime::Environment::Local => Environment::Development,
+        shuttle_runtime::Environment::Deployment => Environment::Production,
+    };
+    let boot_result = create_app::<App{% if with_db %}, Migrator{% endif %}>(StartMode::ServerOnly, &environment)
+        .await
+        .unwrap();
+
+    let router = boot_result.router.unwrap();
+    Ok(router.into())
+}

@@ -1,0 +1,23 @@
+apiVersion: 0.0.1
+name: loco
+version: 0.0.1
+description: Code generator for rust projects using the loco framework
+keywords:
+  - rust
+  - loco
+  - web-framework
+  - rest
+  - seaorm
+dependencies:
+  - name: jsonschema-commons
+    version: 0.0.1
+    url: "file://../jsonschema-commons"
+    tags: 
+      - seaorm
+      - loco
+      - rust
+sources:
+  - https://github.com/dinosath/template-packages
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com

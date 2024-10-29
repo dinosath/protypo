@@ -1,0 +1,65 @@
+# Loco configuration file documentation
+logger:
+  enable: true
+  pretty_backtrace: true
+  level: debug
+  format: compact
+server:
+  port: 5150
+  host: http://localhost
+  middlewares:
+    cors:
+      enable: false
+      allow_origins: ["any"]
+      allow_headers: ["*"]
+      allow_methods: ["*"]
+      max_age: null
+      vary: ["origin","access-control-request-method","access-control-request-headers"]
+
+    static:
+      enable: true
+      must_exist: true
+      precompressed: false
+      folder:
+        uri: "/"
+        path: "frontend/dist"
+      fallback: "assets/static/404.html"
+      static:
+
+workers:
+  mode: BackgroundAsync
+
+mailer:
+  smtp:
+    enable: true
+    host: {{ get_env(name="MAILER_HOST", default="localhost") }}
+    port: 1025
+    secure: false
+
+# Initializers Configuration
+# initializers:
+#  oauth2:
+#    authorization_code: # Authorization code grant type
+#      - client_identifier: google # Identifier for the OAuth2 provider. Replace 'google' with your provider's name if different, must be unique within the oauth2 config.
+#        ... other fields
+
+database:
+  uri: {{ get_env(name="DATABASE_URL", default="postgres://loco:loco@localhost:5432/loco") }}
+  enable_logging: false
+  connect_timeout: {{ get_env(name="DB_CONNECT_TIMEOUT", default="500") }}
+  idle_timeout: 500
+  min_connections: 1
+  max_connections: 1
+  auto_migrate: true
+  dangerously_truncate: false
+  dangerously_recreate: false
+
+queue:
+  kind: Redis
+  uri: {{ get_env(name="REDIS_URL", default="redis://127.0.0.1") }}
+  dangerously_flush: false
+
+auth:
+  jwt:
+    secret: rpo2v3b8TLtiiJceEfyg
+    expiration: 604800
