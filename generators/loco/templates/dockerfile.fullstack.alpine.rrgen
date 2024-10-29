@@ -24,11 +24,9 @@ FROM alpine:latest
 WORKDIR /app
 RUN apk update && apk add openssl ca-certificates
 
-EXPOSE 80 443
-
 ENV LOCO_ENV=production
 
-COPY --from=node-builder /usr/src/dist /usr/app/dist
+COPY --from=node-builder /usr/src/dist /app/dist
 COPY --from=builder /app/src/target/release/{{ values.application.name }}-cli /app/{{ values.application.name }}-cli
 COPY --from=builder /app/src/config /app/config
 
