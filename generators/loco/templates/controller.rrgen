@@ -24,7 +24,7 @@ use super::utils::ListParams;
 pub struct ResponseModel {
     {% for name, property in entity.properties -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    {%- if macros::relation_is_many_to_many(property=property)=='true' -%}
+    {%- if macros::relation_is_many_to_many(property=property)=='true' or macros::relation_is_one_to_many(property=property)=='true'-%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
     pub {{ name | snake_case }}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
@@ -34,6 +34,7 @@ pub struct ResponseModel {
 {% endif -%}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Params {
     {% for name, property in entity.properties -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
@@ -131,7 +132,8 @@ pub fn routes() -> Routes {
         .add("/", post(add))
         .add("/:id", get(get_one))
         .add("/:id", delete(remove))
-        .add("/:id", post(update))
+        .add("/:id", put(update))
+        .add("/:id", patch(update))
 }
 ---
 {% endif %}

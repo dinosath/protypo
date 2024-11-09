@@ -6,9 +6,9 @@ services:
   postgres:
     image: postgres:alpine
     environment:
-      POSTGRES_DB: {{ values.application.name }}
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: loco
+      POSTGRES_USER: loco
+      POSTGRES_PASSWORD: loco
       POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER}']
@@ -23,7 +23,7 @@ services:
     ports:
       - "80:80"
     environment:
-      DATABASE_URL: postgres://postgres:postgres123@postgres:5432/{{ values.application.name }}
+      DATABASE_URL: postgres://loco:loco@postgres:5432/loco
       LOGGER_LEVEL: debug
 #      SERVER_PORT: 8080
     depends_on:

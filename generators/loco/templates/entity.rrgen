@@ -33,6 +33,7 @@ enum {{ name | pascal_case }}{
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(schema_name="public", table_name = "{{ entity.title | snake_case }}")]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     #[sea_orm(primary_key)]
     #[serde(skip_deserializing)]
@@ -102,8 +103,7 @@ impl Related<crate::models::entities::{{ relation }}::Entity> for Entity {
 }
         {%- endif -%}
     {%- endif -%}
-{%- endfor -%}
-
+{%- endfor %}
 
 {% if features and 'graphql' in features -%}
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
@@ -118,7 +118,7 @@ pub enum RelatedEntity {
 }
 {% endif -%}
 
-{% if file_name=="user" %}
+{% if file_name=="user" -%}
 {% include "_user_active_model.tpl" -%}
 {% else -%}
 impl ActiveModelBehavior for ActiveModel {
