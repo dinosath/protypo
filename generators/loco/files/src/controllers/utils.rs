@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct ListParams {
     #[serde(default, deserialize_with = "deserialize_ids")]
     pub ids: Option<Vec<i64>>,

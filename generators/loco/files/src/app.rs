@@ -2,6 +2,7 @@ use std::path::Path;
 
 use async_trait::async_trait;
 use loco_rs::{
+    config,
     app::{AppContext, Hooks, Initializer},
     boot::{create_app, BootResult, StartMode},
     controller::AppRoutes,
@@ -39,7 +40,7 @@ impl Hooks for App {
 
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
         Ok(vec![
-
+            Box::new(loco_extras::initializers::opentelemetry::OpenTelemetryInitializer),
         ])
     }
 

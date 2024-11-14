@@ -5,16 +5,8 @@ message: "File app.rs was created successfully."
 ===
 use std::path::Path;
 use async_trait::async_trait;
-use loco_rs::{
-    app::{AppContext, Hooks, Initializer},
-    bgworker::{BackgroundWorker, Queue},
-    boot::{create_app, BootResult, StartMode},
-    controller::AppRoutes,
-    db::{self, truncate_table},
-    environment::Environment,
-    task::Tasks,
-    Result,
-};
+use loco_rs::{app::{AppContext, Hooks, Initializer},bgworker::{BackgroundWorker, Queue},boot::{create_app, BootResult, StartMode},config,
+    controller::AppRoutes,db::{self, truncate_table},environment::Environment,task::Tasks,Result,};
 use migration::Migrator;
 use sea_orm::DatabaseConnection;
 use crate::{controllers, models::entities::{user}};
@@ -41,7 +33,9 @@ impl Hooks for App {
     }
 
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
-        Ok(vec![])
+        Ok(vec![
+            Box::new(loco_extras::initializers::opentelemetry::OpenTelemetryInitializer),
+        ])
     }
 
     fn routes(_ctx: &AppContext) -> AppRoutes {
@@ -69,5 +63,9 @@ impl Hooks for App {
     async fn seed(db: &DatabaseConnection, base: &Path) -> Result<()> {
         db::seed::<user::ActiveModel>(db, &base.join("users.yaml").display().to_string()).await?;
         Ok(())
+    }
+
+    fn init_logger(_config: &config::Config, _env: &Environment) -> Result<bool> {
+        Ok(true)
     }
 }
