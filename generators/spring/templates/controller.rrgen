@@ -1,0 +1,111 @@
+{# generate controllers #}
+{% import "_macros.tpl" as macros %}
+
+{% for entity_name,entity in entities -%}
+{% if entity.properties %}
+
+{% set file_name = entity.title | snake_case -%}
+{% set module_name = file_name | pascal_case -%}
+to: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+message: "Controller `{{module_name}}` was added successfully."
+===
+use anyhow::{anyhow, Error, Context};
+use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},error::Result,extractor::{Component, Path, Query},};
+use spring_sea_orm::{pagination::{Pagination, PaginationExt},DbConn, };
+use serde::{Deserialize, Serialize};
+use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, EntityTrait, QueryFilter, Set, IntoActiveModel};
+{{ macros::seaorm_prelude_imports(entity=entity)|trim }}
+use crate::models::{{ file_name }}::{ActiveModel, Entity, Model, Column};
+use super::utils::ListParams;
+
+{% if macros::has_one_to_many_relation(entity=entity)=='true' or macros::has_many_to_many_relation(entity=entity)=='true' -%}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResponseModel {
+    {% for name, property in entity.properties -%}
+    {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
+    {%- if macros::relation_is_many_to_many(property=property)=='true' or macros::relation_is_one_to_many(property=property)=='true'-%}
+    pub {{ name | snake_case }}:Vec<i32>,
+    {% elif property.type -%}
+    pub {{ name | snake_case }}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    {% endif -%}
+    {% endfor %}
+}
+{% endif -%}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Params {
+    {% for name, property in entity.properties -%}
+    {%- if property.readOnly-%}{% continue -%}{%- endif -%}
+    {%- if macros::relation_is_many_to_many(property=property)=='true' -%}
+    pub {{ name | snake_case }}:Vec<i32>,
+    {% elif property.type -%}
+    pub {{ name | snake_case }}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    {% endif -%}
+    {% endfor %}
+}
+
+impl Params {
+    fn update(&self, item: &mut ActiveModel) {
+      {% for name, property in entity.properties -%}
+        {%- if property.readOnly or macros::relation_is_many_to_many(property=property)=='true' -%}{% continue -%}{%- endif -%}
+        {%- if property.type  -%}
+      item.{{ name | snake_case }} = Set(self.{{ name | snake_case }}.clone());
+        {% endif -%}
+      {%- endfor -%}
+    }
+}
+
+async fn load_item(db: &DbConn, id: i32) -> std::result::Result<Model, Error> {
+    let item = Entity::find_by_id(id).one(db).await.context("Failed to find entity")?;
+    item.ok_or_else(|| anyhow!("Entity not found"))
+}
+
+#[get("/{{ entity.title | plural | kebab_case  }}")]
+pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
+    let ids = params.ids.unwrap_or_default();
+
+    let mut query = Entity::find();
+    if !ids.is_empty() {
+        query = query.filter(Column::Id.is_in(ids));
+    }
+
+    let users = query.page(&db, pagination).await.context("list item failed")?;
+    Ok(Json(users))
+}
+
+
+#[post("/{{ entity.title | plural | kebab_case  }}")]
+pub async fn add(Component(db): Component<DbConn>, Json(params): Json<Params>) -> Result<impl IntoResponse> {
+    let mut item = ActiveModel {
+        ..Default::default()
+    };
+    params.update(&mut item);
+    let item = item.insert(&db).await.context("failed to insert item")?;
+    Ok(Json(item))
+}
+
+#[put("/{{ entity.title | plural | kebab_case  }}/:id")]
+pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<impl IntoResponse> {
+    let item = load_item(&db, id).await?;
+    let mut item = item.into_active_model();
+    params.update(&mut item);
+    let item = item.update(&db).await.context("failed to update item")?;
+    Ok(Json(item))
+}
+
+#[delete("/{{ entity.title | plural | kebab_case  }}/:id")]
+pub async fn remove(Component(db): Component<DbConn>, Path(id): Path<i32>) -> Result<impl IntoResponse> {
+    let item = load_item(&db, id).await?;
+    item.delete(&db).await.context("failed to delete item")?;
+    Ok(Json(()))
+}
+
+#[get("/{{ entity.title | plural | kebab_case  }}/:id")]
+pub async fn get_one(Component(db): Component<DbConn>, Path(id): Path<i32>,) -> Result<impl IntoResponse> {
+    let item = load_item(&db, id).await.context("failed to delete item")?;
+    Ok(Json(item))
+}
+---
+{% endif %}
+{% endfor -%}

@@ -1,0 +1,17 @@
+[web]
+port = 8080
+graceful = true
+
+[web.middlewares]
+compression = { enable = true }
+logger = { enable = true }
+catch_panic = { enable = true }
+timeout_request = { enable = true, timeout = 30000 }
+static = { enable = true, uri = "/", path = "static", precompressed = true, fallback = "index.html" }
+
+[sqlx]
+uri = "postgres://postgres:xudjf23adj213@127.0.0.1:5432"
+min_connections = 10
+
+[logger]
+pretty_backtrace = true

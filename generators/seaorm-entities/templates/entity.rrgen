@@ -1,0 +1,121 @@
+{# generate entities #}
+{% import "_macros.tpl" as macros %}
+
+{% for entity_name,entity in entities -%}
+{% if entity.properties %}
+
+{% set file_name = entity.title | snake_case -%}
+{% set module_name = file_name | pascal_case -%}
+to: {{ values.outputFolder }}/src/models/{{ file_name }}.rs
+message: "Entity `{{module_name}}` was added successfully."
+===
+use sea_orm::entity::prelude::*;
+use serde::{Serialize, Deserialize};
+{{ self::enum_imports(entity=entity) }}
+{{ self::seaorm_prelude_imports(entity=entity)|trim }}
+
+{% for name,property in entity.properties -%}
+    {% if property.enum -%}
+#[derive(PartialEq, Clone, Debug, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::None)", enum_name = "{{ name | snake_case }}")]
+enum {{ name | pascal_case }}{
+        {% for enum in property.enum -%}
+        #[sea_orm(string_value = "{{ enum | snake_case }}")]
+        {{ enum }}{%- if not loop.last -%},{% endif -%}
+        {% endfor %}
+}
+    {% endif -%}
+{% endfor -%}
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[sea_orm(schema_name="public", table_name = "{{ entity.title | snake_case }}")]
+#[serde(rename_all = "camelCase")]
+pub struct Model {
+    #[sea_orm(primary_key)]
+    #[serde(skip_deserializing)]
+    pub id: i32,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
+    {%- for name, property in entity.properties -%}
+    {% if macros::relation_is_many_to_many(property=property)=='true' or macros::relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+    {{ self::validations(name=name,property=property) }}
+    pub {{ name | snake_case }}{% if self::relation_is_many_to_one(property=property)=='true' and self::get_relation(property=property) | snake_case == name | snake_case -%}_id{% endif -%}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }}{%- if not loop.last -%},{% endif -%}
+    {% endfor %}
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+{% for name,property in entity.properties -%}
+    {% if self::relation_is_one_to_many(property=property)=='true' -%}
+        {% set relation = self::get_relation(property=property) | snake_case -%}
+    #[sea_orm(has_many = "crate::models::{{ relation }}::Entity")]
+    {{ name | pascal_case }},
+
+    {%- elif self::relation_is_many_to_one(property=property)=='true' -%}
+        {% set relation = self::get_relation(property=property) | snake_case -%}
+    #[sea_orm(belongs_to = "crate::models::{{ relation }}::Entity",
+    from = "Column::{{ name | pascal_case }}{% if relation==name | snake_case -%}Id{% endif -%}",
+    to = "crate::models::{{ relation }}::Column::Id")]
+    {{ name | pascal_case }},
+
+    
+    {% elif self::relation_is_many_to_many(property=property)=='true'-%}
+    {% set relation = macros::get_m2m_relation(left=entity.title, property=property) | snake_case-%} 
+    #[sea_orm(has_many = "crate::models::{{ relation }}::Entity")]
+    {{ relation | pascal_case }},
+    {% endif -%}
+{% endfor %}
+}
+
+{% set_global implemented_relations = [] -%}
+{% for name,property in entity.properties -%}
+    {%- set relation = self::get_relation(property=property) | snake_case -%}
+    {%- if self::is_relation(property=property)=='true' and relation not in implemented_relations-%}
+        {%- set_global implemented_relations = implemented_relations | concat(with=relation)  -%}
+        {%- if self::relation_is_many_to_many(property=property)=='true'-%}
+impl Related<crate::models::{{ relation }}::Entity> for Entity {
+    {% set relation = macros::get_m2m_relation(left=entity.title, property=property) -%} 
+    fn to() -> RelationDef {
+        crate::models::{{ relation | snake_case }}::Relation::{{ relation | split(pat="_") | first | pascal_case}}.def()
+    }
+
+    fn via() -> Option<RelationDef> {
+        Some(crate::models::{{ relation | snake_case }}::Relation::{{ relation | split(pat="_") | last | pascal_case }}.def().rev())
+    }
+}
+
+impl Related<super::{{ relation | snake_case }}::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::{{ relation | pascal_case }}.def()
+    }
+}
+
+        {% else -%}
+
+impl Related<crate::models::{{ relation }}::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::{{ name | pascal_case }}.def()
+    }
+}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor %}
+
+{% if features and 'graphql' in features -%}
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
+pub enum RelatedEntity {
+    {% set relations = macros::get_all_relations(entity=entity) | trim -%}
+    {% if relations !="" -%}
+    {% for relation in relations|split(pat=",") -%}    
+    #[sea_orm(entity = "crate::models::{{ relation | snake_case }}::Entity")]
+    {{ relation | pascal_case }}{%- if not loop.last -%},{% endif -%}
+    {% endfor -%}
+    {% endif -%}
+}
+{% endif -%}
+
+impl ActiveModelBehavior for ActiveModel {
+}
+---
+{% endif %}
+{% endfor -%}

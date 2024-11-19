@@ -1,0 +1,22 @@
+{% set file_name= values.outputFolder ~"/Cargo.toml" %}
+to: {{file_name}}
+message: "File `{{file_name}}` was created successfully."
+===
+[package]
+name = "{{ values.application.name }}"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1.0"
+chrono = "0.4"
+sea-orm = "1.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+spring = "0.2.9"
+spring-opentelemetry = "0.2.1"
+spring-sea-orm = { version = "0.2.3", features = ["postgres","with-web",] }
+spring-web = "0.2.4"
+tokio = { version = "1.39" }
+uuid = { version = "1.10", features = ["v4"] }

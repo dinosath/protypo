@@ -1,18 +1,17 @@
 apiVersion: 0.0.1
-name: react-admin
+name: seaorm-entities
 version: 0.0.1
-description: Code generator for fronted using the react admin framework.
+description: Code generator for sea orm entities
 keywords:
-  - react
-  - react-admin
-  - fronted
+  - rust
+  - seaorm
 dependencies:
   - name: jsonschema-commons
     version: 0.0.1
     url: "file://../jsonschema-commons"
     tags: 
+      - common
       - jsonschema
-      - commons
 sources:
   - https://github.com/dinosath/protypo
 maintainers:

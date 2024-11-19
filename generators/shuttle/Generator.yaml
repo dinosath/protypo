@@ -7,7 +7,7 @@ keywords:
   - rust
   - ifc
 sources:
-  - https://github.com/dinosath/template-packages
+  - https://github.com/dinosath/protypo
 maintainers:
   - name: Konstantinos Athanasiou
     email: dinosath0@gmail.com
