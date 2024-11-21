@@ -10,7 +10,6 @@ use clap_derive::Subcommand;
 use futures::future::err;
 use jsonptr::Pointer;
 use reqwest::Url;
-use rrgen::RRgen;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -20,6 +19,7 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::format;
 use zip::ZipArchive;
 use crate::generator::{dereference_config, install_template, Generator};
+use minijinja::{Environment, context};
 
 /// A fictional versioning CLI
 #[derive(Parser, Debug)]
@@ -112,13 +112,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let mut rrgen = RRgen::default();
-    rrgen.document_separator = "---\n".to_string();
-    rrgen.frontmatter_separator = "===\n".to_string();
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
-
 
     let cli = Cli::parse();
     let local_repo = dirs::data_local_dir().unwrap().join("protypo");
@@ -183,7 +179,7 @@ async fn main() -> Result<(), Error> {
             debug!("copied files");
             let entities = generator.collect_entities();
             ctx.entities = entities;
-            generator.generate_templates(&mut rrgen,&ctx)?;
+            generator.generate(&ctx)?;
 
             Ok(())
         },

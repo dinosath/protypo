@@ -1,0 +1,48 @@
+name: Build and Publish Rust Crate
+
+on:
+  # Triggers the workflow on every push to the main branch
+  push:
+    branches:
+      - main
+  # Also allow manual triggering of the workflow
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build the crate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Build the project
+        run: cargo build --release
+
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'  # Only publish if on the main branch
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Publish to crates.io
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}

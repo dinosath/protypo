@@ -9,7 +9,7 @@ use futures::stream;
 use git2::Repository;
 use glob::glob;
 use reqwest::{get, Client, Response};
-use rrgen::{GenResult, RRgen};
+use minijinja::{Environment, context};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use tar::Archive;
@@ -37,8 +37,8 @@ pub(crate) struct Generator {
     pub schema: Option<Value>,
     pub files: Option<Vec<String>>,
     pub entities: Value,
-    pub templates: Option<Vec<String>>,
-    pub dependencies: Option<Vec<Generator>>,
+    pub templates: HashMap<String,String>,
+    pub dependencies: Vec<Generator>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -172,7 +172,7 @@ impl Generator {
         let values= read_yaml_file(base_path, "values.yaml")?;
         let schema = read_optional_json_file(base_path, "values.schema.json");
         let files = read_optional_directory(base_path, "files");
-        let templates = read_optional_directory(base_path, "templates");
+        let templates = files_to_map(base_path.join("templates").join("**/*").to_str().unwrap())?;
         let entities = read_optional_entities(base_path, "entities")?;
 
         let dependencies: Vec<Generator> = match &generator_yaml.dependencies {
@@ -196,7 +196,7 @@ impl Generator {
             files,
             entities,
             templates,
-            dependencies: Some(dependencies),
+            dependencies,
         })
     }
 
@@ -277,11 +277,15 @@ impl Generator {
 
         Ok(())
     }
+    pub fn generate(&self,ctx: &Context) -> Result<(), io::Error> {
+        let mut env = Environment::new();
+        traverse_and_collect_templates(self, &mut env);
+        self.generate_templates(&mut env,&ctx)
+    }
 
-    pub fn generate_templates(&self, rrgen: &mut RRgen, ctx: &Context) -> Result<(), io::Error> {
+    fn generate_templates(&self, env: &mut Environment, ctx: &Context) -> Result<(), io::Error> {
         debug!("Generator name:{:?},version:{:?}, base_path {:?}",self.generator_yaml.name, self.generator_yaml.version, self.base_path);
         debug!("Generator name:{:?},version:{:?}, Start generating templates {:?}", self.generator_yaml.name, self.generator_yaml.version, self.templates);
-
 
         let generator_values = self.get_values(ctx.values.clone());
 
@@ -295,21 +299,26 @@ impl Generator {
         if let Some(dependencies) = &self.dependencies {
             for dependency in dependencies {
                 debug!("Generating templates for dependency: {:?}", dependency.generator_yaml.name);
-                dependency.generate_templates(rrgen, &generator_context)?;
+                dependency.generate_templates(env, &generator_context)?;
             }
         }
 
         debug!("Generator name:{:?},version:{:?}", self.generator_yaml.name, self.generator_yaml.version);
-        if self.templates.is_none() || self.templates.clone().unwrap().is_empty() {
+        if self.templates.is_empty() {
             debug!("There are no templates to generate");
         } else {
-            rrgen.add_dir_to_tera(Path::new(&self.base_path).join("templates"));
-            let mut templates = self.templates.clone().unwrap();
-            templates.sort();
+
+            let mut templates = self.templates.clone();
             templates.iter()
-                .map(|template| Path::new(template))
-                .filter(|template| template.is_file() && !(template.file_name().unwrap().to_str().unwrap().starts_with("_") && template.extension().unwrap().to_str().unwrap().eq("tpl")))
-                .for_each(|file_path| {
+                .filter(|filename,template| {
+                    let file_path = Path::new(filename);
+                    let filename = file_path.file_name().unwrap().to_str().unwrap();
+                    let extension = file_path.extension().unwrap().to_str().unwrap();
+                    let file_path = Path::new(filename);
+                    file_path.is_file() && !(file_path.file_name().unwrap().to_str().starts_with("_") && file_path.extension().unwrap().to_str().unwrap().eq("tpl"))
+                })
+                .for_each(|filename,template| {
+                    environment.add_template(filename.clone(), content.clone())?;
                     let file_name = file_path.file_name().unwrap().to_str().unwrap();
                     let content = fs::read_to_string(file_path).unwrap();
                     debug!("generator:{:?} generating file_path:{:?}, file_name:{:?}",self.key(),file_path, file_name);
@@ -387,6 +396,23 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
     Ok(temp_dir)
 }
 
+fn traverse_and_collect_templates(generator: &Generator, environment: &mut Environment) {
+    generator.dependencies.iter().for_each(|dependency| {
+        traverse_and_collect_templates(dependency, environment);
+    });
+
+    generator.templates
+        .iter()
+        .filter(|filename,content| {
+            let file_path = Path::new(filename);
+            let filename = file_path.file_name().unwrap().to_str().unwrap();
+            let extension = file_path.extension().unwrap().to_str().unwrap();
+            file_path.is_file() && filename.starts_with("_") && extension.eq("tpl")
+        })
+        .for_each(|filename,content| {
+            environment.add_template(filename.clone(), content.clone())?;
+        });
+}
 
 fn construct_destination_path(base_path: &Path, file: &Path, destination_dir: &Path) -> Result<PathBuf, io::Error> {
     let base_path = base_path.canonicalize().map_err(|e| {
@@ -457,6 +483,21 @@ fn read_optional_directory(base_path: &Path, dir_name: &str) -> Option<Vec<Strin
         Some(files)
     }
 }
+
+fn files_to_map(pattern: &str) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    glob(pattern)?
+        .filter_map(Result::ok)
+        .filter(|path| path.is_file())
+        .filter_map(|path| {
+            let file_name = path.file_name()?.to_str()?.to_string();
+            let content = fs::read_to_string(&path).ok()?;
+            Some((file_name, content))
+        })
+        .collect::<HashMap<String, String>>()
+        .into()
+}
+
+
 
 fn read_optional_entities(base_path: &Path, dir_name: &str) -> Result<Value, io::Error> {
     let dir_path = base_path.join(dir_name);

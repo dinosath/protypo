@@ -19,10 +19,9 @@ flate2 = "1.0"
 futures = "0.3"
 glob = "0.3"
 jsonptr = "0.6"
-jsonschema = "0.21"
+jsonschema = "0.26"
 json_value_merge = "2.0"
 log = "0.4"
-rrgen = { git = "https://github.com/dinosath/rrgen.git" }
 reqwest = { version = "0.12", features = ["json", "gzip", "deflate", "stream","blocking"] }
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -37,3 +36,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }
 uuid = {version = "1.10",features = ["v4", "fast-rng", ] }
 zip = "0.6"
+minijinja = "2.5.0"
