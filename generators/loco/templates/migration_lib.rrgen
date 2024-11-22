@@ -14,19 +14,19 @@ pub struct Migrator;
 mod {{ entity.title | snake_case }};
 {% endfor %}
 
-{% set_global entity_with_dependencies = [] -%}
-{% set_global rendered_entities = [] -%}
+{% set entity_with_dependencies = [] -%}
+{% set rendered_entities = [] -%}
 #[async_trait::async_trait]
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
             {% for entity_name,entity in entities -%}
                 {% if entity.properties -%}
-                    {% set dependencies = macros::get_m21_relations(entity=entity) -%}
+                    {% set dependencies = get_m21_relations(entity=entity) -%}
                     {% if dependencies | length == 0 -%}
                         Box::new({{ entity.title | snake_case }}::Migration),
                     {% else -%}
-                        {%- set_global entity_with_dependencies = entity_with_dependencies | concat(with=entity.title) -%}
+                        {%- set entity_with_dependencies = entity_with_dependencies | concat(with=entity.title) -%}
                     {%- endif -%}
                 {%- endif -%}
             {% endfor -%}

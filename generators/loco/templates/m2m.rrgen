@@ -1,7 +1,7 @@
 {# generate entities #}
 {% import "_macros.tpl" as macros -%}
 
-{% set relations = macros::get_m2m_relations(entities=entities) | split(pat=",") -%}
+{% set relations = get_m2m_relations(entities=entities) | split(pat=",") -%}
 {% for relation in relations -%}
 {% set left = relation | split(pat="_") | first %}
 {% set right = relation | split(pat="_") | last %}

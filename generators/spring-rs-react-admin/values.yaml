@@ -1,4 +1,4 @@
-loco:
+spring-rs:
   application:
     name: app
   outputFolder: "./output"

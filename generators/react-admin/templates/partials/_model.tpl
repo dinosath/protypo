@@ -21,8 +21,8 @@ export const {{ entity.title | pascal_case }}List = () => (
             {% if extraFields and 'createdAt' in extraFields -%}<TextField source="created_at" />{% endif -%}
             {% if extraFields and 'updatedAt' in extraFields -%}<TextField source="updated_at" />{% endif -%}
             {% for name,property in entity.properties -%}
-            {% if core::relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
-            <{{ macros::get_field(property=property) }} source="{{ macros::source(name=name,property=property)}}" />
+            {% if relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+            <{{ get_field(property=property) }} source="{{ source(name=name,property=property)}}" />
             {% endfor %}
         </DatagridConfigurable>
     </List>
@@ -35,8 +35,8 @@ export const {{ entity.title | pascal_case }}Show = () => (
             {% if extraFields and 'createdAt' in extraFields -%}<TextField source="created_at" />{% endif -%}
             {% if extraFields and 'updatedAt' in extraFields -%}<TextField source="updated_at" />{% endif -%}
             {% for name,property in entity.properties -%}
-                {% if core::relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
-                <{{ macros::get_field(property=property) }} source="{{ macros::source(name=name,property=property)}}" />
+                {% if relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+                <{{ get_field(property=property) }} source="{{ source(name=name,property=property)}}" />
             {% endfor %}
         </SimpleShowLayout>
       </Show>
@@ -49,7 +49,7 @@ export const {{ entity.title | pascal_case }}Edit = () => (
             {% if extraFields and 'createdAt' in extraFields -%}<DateTimeInput readOnly source="created_at" />{% endif -%}
             {% if extraFields and 'updatedAt' in extraFields -%}<DateTimeInput readOnly source="updated_at" />{% endif -%}
             {% for name,property in entity.properties -%}
-                {% if core::relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+                {% if relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
                 {% include "_input-field.tpl" -%}
             {% endfor %}
         </SimpleForm>
@@ -60,7 +60,7 @@ export const {{ entity.title | pascal_case }}Create = () => (
       <Create>
         <SimpleForm>
             {% for name,property in entity.properties -%}
-                {% if core::relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+                {% if relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
                 {% include "_input-field.tpl" -%}
             {% endfor %}
         </SimpleForm>

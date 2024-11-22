@@ -28,20 +28,20 @@ impl MigrationTrait for Migration {
                 .if_not_exists()
                     .col(pk_auto({{ enum_name }}::Id))                    
                     {% for name, property in entity.properties -%}
-                    {% if macros::relation_is_many_to_many(property=property)=='true' or macros::relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
-                    {%- if macros::relation_is_many_to_one(property=property)=='true' -%}
-                    {%- set relation = macros::get_relation(property=property) -%}
-                    .col(unsigned_null({{ enum_name }}::{{ name | pascal_case }}{% if macros::m21_relation_equal_name(name=name,property=property)=='true' -%}Id{% endif -%}))
+                    {% if relation_is_many_to_many(property=property)=='true' or relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+                    {%- if relation_is_many_to_one(property=property)=='true' -%}
+                    {%- set relation = get_relation(property=property) -%}
+                    .col(unsigned_null({{ enum_name }}::{{ name | pascal_case }}{% if m21_relation_equal_name(name=name,property=property)=='true' -%}Id{% endif -%}))
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-{{ enum_name | snake_case }}-{{ name | snake_case }}{% if macros::m21_relation_equal_name(name=name,property=property)=='true' -%}_id{% endif -%}")
-                            .from({{ enum_name }}::Table, {{ enum_name }}::{{ name | pascal_case }}{% if macros::m21_relation_equal_name(name=name,property=property)=='true' -%}Id{% endif -%})
+                            .name("fk-{{ enum_name | snake_case }}-{{ name | snake_case }}{% if m21_relation_equal_name(name=name,property=property)=='true' -%}_id{% endif -%}")
+                            .from({{ enum_name }}::Table, {{ enum_name }}::{{ name | pascal_case }}{% if m21_relation_equal_name(name=name,property=property)=='true' -%}Id{% endif -%})
                             .to({{ relation | pascal_case }}::Table, {{ relation | pascal_case }}::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     {% else -%}
-                    .col({{ macros::get_migration_type(name=name,property=property,required=entity.required) }}({{ enum_name }}::{{ name | pascal_case }}
+                    .col({{ get_migration_type(name=name,property=property,required=entity.required) }}({{ enum_name }}::{{ name | pascal_case }}
                     {%- if property.enum -%}
                     ,Alias::new("{{ name | snake_case }}"),{{ name | pascal_case }}::iter()
                     {%- endif -%}
@@ -104,7 +104,7 @@ impl MigrationTrait for Migration {
     }
 }
 
-{% set m21_relations = macros::get_m21_relations_type(entity=entity) | trim -%}
+{% set m21_relations = get_m21_relations_type(entity=entity) | trim -%}
 {% if m21_relations | length > 0 -%}
 {% set m21_relations = m21_relations | split(pat=",") | unique -%}
 {% for relation in m21_relations -%}
@@ -134,8 +134,8 @@ enum {{ enum_name }} {
     Table,
     Id,
     {% for name, property in entity.properties -%}
-    {% if macros::relation_is_many_to_many(property=property)=='true' or macros::relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
-    {{ name | pascal_case }}{% if macros::m21_relation_equal_name(name=name,property=property)=='true' -%}Id{% endif -%}{%- if not loop.last -%},{%- endif %}
+    {% if relation_is_many_to_many(property=property)=='true' or relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+    {{ name | pascal_case }}{% if m21_relation_equal_name(name=name,property=property)=='true' -%}Id{% endif -%}{%- if not loop.last -%},{%- endif %}
     {% endfor %}
 }
 {% elif entity.enum %}

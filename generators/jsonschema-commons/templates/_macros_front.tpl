@@ -1,6 +1,5 @@
 {% import "_macros.tpl" as macros -%}
 
-
 {%- macro get_field(property) -%}
 {% filter trim %}
     {% if property.type and property.type == "string" -%}
@@ -23,14 +22,14 @@
             NumberField
     {% elif property.enum %}
             TextField
-    {% elif macros::relation_is_one_to_many(property=property)=='true' or macros::relation_is_many_to_many(property=property)=='true'  -%}
-        {% set relation = macros::get_relation(property=property) | plural | snake_case -%}
+    {% elif relation_is_one_to_many(property=property)=='true' or relation_is_many_to_many(property=property)=='true'  -%}
+        {% set relation = get_relation(property=property) | plural | snake_case -%}
             TextField
-    {% elif macros::relation_is_many_to_one(property=property)=='true' -%}
-        {% set relation = macros::get_relation(property=property) -%}
+    {% elif relation_is_many_to_one(property=property)=='true' -%}
+        {% set relation = get_relation(property=property) -%}
             ReferenceField reference="{{ relation | plural | kebab_case }}" label="{{ relation | pascal_case }}"
-    {% elif macros::relation_is_many_to_many(property=property)=='true' -%}
-        {% set relation = macros::get_relation(property=property) -%}
+    {% elif relation_is_many_to_many(property=property)=='true' -%}
+        {% set relation = get_relation(property=property) -%}
         ReferenceArrayField reference="{{ relation | plural | kebab_case }}" label="{{ relation | pascal_case }}"
     {% else -%}
             TextField
@@ -70,9 +69,9 @@ readOnly
                { name: '{{ enum }}' }{%- if not loop.last -%},{% endif -%}
             {%- endfor -%}
             ]}
-    {% elif macros::relation_is_many_to_one(property=property)=='true' -%}
+    {% elif relation_is_many_to_one(property=property)=='true' -%}
         ReferenceInput
-    {% elif macros::relation_is_many_to_many(property=property)=='true' -%}
+    {% elif relation_is_many_to_many(property=property)=='true' -%}
         ReferenceArrayInput 
     {% else -%}
         TextInput
@@ -82,16 +81,16 @@ readOnly
 
 
 {%- macro get_all_properties_by_name(entity) -%}
-{%- set_global properties = [] -%}
+{%- set properties = [] -%}
 {% for name,property in entity.properties -%}
-    {% if macros::relation_is_one_to_many(property=property)=='true' or macros::relation_is_many_to_many(property=property)=='true'  -%}
+    {% if relation_is_one_to_many(property=property)=='true' or relation_is_many_to_many(property=property)=='true'  -%}
     {% continue -%}
     {% endif -%}
-    {% if macros::relation_is_many_to_one(property=property)=='true'  -%}
-    {% set relation = macros::get_relation(property=property) | camel_case | trim -%}
+    {% if relation_is_many_to_one(property=property)=='true'  -%}
+    {% set relation = get_relation(property=property) | camel_case | trim -%}
     {% set name = relation ~ " { id }" -%}
     {% endif -%}
-    {%- set_global properties = properties | concat(with=name) -%}
+    {%- set properties = properties | concat(with=name) -%}
 {% endfor -%}
 {{ properties | join(sep=" ") }}
 {%- endmacro -%}
@@ -99,7 +98,7 @@ readOnly
 {%- macro source(name,property) -%}
 {% filter trim %}
 {{name|camel_case}}
-{%- if macros::relation_is_many_to_one(property=property)=='true' -%}
+{%- if relation_is_many_to_one(property=property)=='true' -%}
 .id
 {%- endif -%}
 {%- endfilter -%}

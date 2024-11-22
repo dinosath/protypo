@@ -15,19 +15,19 @@ message: "Controller `{{module_name}}` was added successfully."
 use loco_rs::prelude::*;
 use serde::{Deserialize, Serialize};
 use axum::{debug_handler,extract::Query};
-{{ macros::seaorm_prelude_imports(entity=entity)|trim }}
+{{ seaorm_prelude_imports(entity=entity)|trim }}
 use crate::models::entities::{{ file_name }}::{ActiveModel, Entity, Model, Column};
 use super::utils::ListParams;
 
-{% if macros::has_one_to_many_relation(entity=entity)=='true' or macros::has_many_to_many_relation(entity=entity)=='true' -%}
+{% if has_one_to_many_relation(entity=entity)=='true' or has_many_to_many_relation(entity=entity)=='true' -%}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ResponseModel {
     {% for name, property in entity.properties -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    {%- if macros::relation_is_many_to_many(property=property)=='true' or macros::relation_is_one_to_many(property=property)=='true'-%}
+    {%- if relation_is_many_to_many(property=property)=='true' or relation_is_one_to_many(property=property)=='true'-%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
-    pub {{ name | snake_case }}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endif -%}
     {% endfor %}
 }
@@ -38,10 +38,10 @@ pub struct ResponseModel {
 pub struct Params {
     {% for name, property in entity.properties -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
-    {%- if macros::relation_is_many_to_many(property=property)=='true' -%}
+    {%- if relation_is_many_to_many(property=property)=='true' -%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
-    pub {{ name | snake_case }}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endif -%}
     {% endfor %}
 }
@@ -49,7 +49,7 @@ pub struct Params {
 impl Params {
     fn update(&self, item: &mut ActiveModel) {
       {% for name, property in entity.properties -%}
-        {%- if property.readOnly or macros::relation_is_many_to_many(property=property)=='true' -%}{% continue -%}{%- endif -%}
+        {%- if property.readOnly or relation_is_many_to_many(property=property)=='true' -%}{% continue -%}{%- endif -%}
         {%- if property.type  -%}
       item.{{ name | snake_case }} = Set(self.{{ name | snake_case }}.clone());
         {% endif -%}

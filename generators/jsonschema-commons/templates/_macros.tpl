@@ -138,7 +138,7 @@
 {%- macro get_type_with_option(name, property, required_fields) -%}
 {% set required = required_fields and name and name in required_fields -%}
 {% if not required -%}Option<{% endif -%}
-{{self::get_type(name=name,property=property)}}
+{{get_type(name=name,property=property)}}
 {%- if not required -%}>{% endif -%}
 {%- endmacro -%}
 
@@ -146,7 +146,7 @@
 {%- filter trim -%}
     {% if property['$ref'] -%}
     {{ property['$ref'] | split(pat=".")|first }}
-    {% elif self::relation_is_many_to_many(property=property)=='true' -%}
+    {% elif relation_is_many_to_many(property=property)=='true' -%}
     {{ property['items']['$ref'] | split(pat=".") | first }}
     {%- endif -%}
 {%- endfilter -%}
@@ -170,31 +170,31 @@
 {%- endmacro -%}
 
 {%- macro is_relation(property) -%}
-{{ self::relation_is_many_to_one(property=property)=='true' or self::relation_is_one_to_many(property=property)=='true' or self::relation_is_many_to_many(property=property)=='true'  }}
+{{ relation_is_many_to_one(property=property)=='true' or relation_is_one_to_many(property=property)=='true' or relation_is_many_to_many(property=property)=='true'  }}
 {%- endmacro -%}
 
 {%- macro get_m2m_relation(left,property) -%}
 {%- filter trim -%}
-{% if self::relation_is_many_to_many(property=property) %}
-{% set right = self::get_relation(property=property) %}
-{% set_global relation_array = [] %}
-{% set_global relation_array = relation_array | concat(with=left) %}
-{% set_global relation_array = relation_array | concat(with=right) %}
+{% if relation_is_many_to_many(property=property) %}
+{% set right = get_relation(property=property) %}
+{% set relation_array = [] %}
+{% set relation_array = relation_array | concat(with=left) %}
+{% set relation_array = relation_array | concat(with=right) %}
 {{relation_array | sort | join(sep="_")}}
 {% endif%}
 {%- endfilter -%}
 {%- endmacro -%}
 
 {%- macro get_all_relations(entity) -%}
-{% set_global created_relations = [] -%}
-{% if entity.properties -%}
-    {% for name,property in entity.properties -%}
-        {% if self::relation_is_many_to_many(property=property)=='true' -%}
-            {% set relation = self::get_m2m_relation(left=entity.title, property=property) | trim -%}
-            {% set_global created_relations = created_relations | concat(with=relation) -%}
-        {% elif self::is_relation(property=property)=='true' -%}
-            {% set relation = self::get_relation(property=property) | trim -%}
-            {% set_global created_relations = created_relations | concat(with=relation) -%}
+{% set created_relations = [] -%}
+{% if entity.properties | items  -%}
+    {% for name,property in entity.properties | items  -%}
+        {% if relation_is_many_to_many(property=property)=='true' -%}
+            {% set relation = get_m2m_relation(left=entity.title, property=property) | trim -%}
+            {% set created_relations = created_relations | concat(with=relation) -%}
+        {% elif is_relation(property=property)=='true' -%}
+            {% set relation = get_relation(property=property) | trim -%}
+            {% set created_relations = created_relations | concat(with=relation) -%}
         {% endif -%}
     {% endfor -%}
 {% endif -%}
@@ -202,13 +202,13 @@
 {%- endmacro -%}
 
 {%- macro get_m2m_relations(entities) -%}
-{% set_global created_relations = [] %}
+{% set created_relations = [] %}
 {% for entity_name,entity in entities -%}
-    {% if entity.properties %}
-        {% for name,property in entity.properties -%}
-            {% if self::relation_is_many_to_many(property=property)=='true' -%}
-                {% set relation = self::get_m2m_relation(left=entity.title, property=property) %}
-                {% set_global created_relations = created_relations | concat(with=relation) %}
+    {% if entity.properties | items  %}
+        {% for name,property in entity.properties | items  -%}
+            {% if relation_is_many_to_many(property=property)=='true' -%}
+                {% set relation = get_m2m_relation(left=entity.title, property=property) %}
+                {% set created_relations = created_relations | concat(with=relation) %}
             {% endif %}
         {% endfor %}
     {% endif %}
@@ -217,12 +217,12 @@
 {%- endmacro -%}
 
 {%- macro get_m21_relations(entity) -%}
-{% set_global created_relations = [] -%}
-{% if entity.properties -%}
-    {% for name,property in entity.properties -%}
-        {% if self::relation_is_many_to_one(property=property)=='true' -%}
-            {% set relation = self::get_relation(left=entity.title, property=property) | trim -%}
-            {% set_global created_relations = created_relations | concat(with=relation) -%}
+{% set created_relations = [] -%}
+{% if entity.properties | items  -%}
+    {% for name,property in entity.properties | items  -%}
+        {% if relation_is_many_to_one(property=property)=='true' -%}
+            {% set relation = get_relation(left=entity.title, property=property) | trim -%}
+            {% set created_relations = created_relations | concat(with=relation) -%}
         {% endif -%}
     {% endfor -%}
 {% endif -%}
@@ -231,10 +231,10 @@
 
 
 {%- macro has_many_to_one_relation(entity) -%}
-{%- set_global has_many_to_one_relation = false -%}
-{% for name,property in entity.properties -%}
-    {% if self::relation_is_many_to_one(property=property)=='true' -%}
-        {%- set_global has_many_to_one_relation = true -%}
+{%- set has_many_to_one_relation = false -%}
+{% for name,property in entity.properties | items  -%}
+    {% if relation_is_many_to_one(property=property)=='true' -%}
+        {%- set has_many_to_one_relation = true -%}
         {% break -%}
     {% endif -%}
 {% endfor -%}
@@ -242,10 +242,10 @@
 {%- endmacro -%}
 
 {%- macro has_many_to_many_relation(entity) -%}
-{%- set_global has_many_to_many_relation = false -%}
-{% for name,property in entity.properties -%}
-    {% if self::relation_is_many_to_many(property=property)=='true' -%}
-        {%- set_global has_many_to_many_relation = true -%}
+{%- set has_many_to_many_relation = false -%}
+{% for name,property in entity.properties | items  -%}
+    {% if relation_is_many_to_many(property=property)=='true' -%}
+        {%- set has_many_to_many_relation = true -%}
         {% break -%}
     {% endif -%}
 {% endfor -%}
@@ -253,10 +253,10 @@
 {%- endmacro -%}
 
 {%- macro has_one_to_many_relation(entity) -%}
-{%- set_global has_one_to_many_relation = false -%}
-{% for name,property in entity.properties -%}
-    {% if self::relation_is_one_to_many(property=property)=='true' -%}
-        {%- set_global has_one_to_many_relation = true -%}
+{%- set has_one_to_many_relation = false -%}
+{% for name,property in entity.properties | items  -%}
+    {% if relation_is_one_to_many(property=property)=='true' -%}
+        {%- set has_one_to_many_relation = true -%}
         {% break -%}
     {% endif -%}
 {% endfor -%}
@@ -264,9 +264,9 @@
 {%- endmacro -%}
 
 {%- macro enum_imports(entity) -%}
-{%- for name,property in entity.properties -%}
+{%- for name,property in entity.properties | items -%}
     {%- if property['$ref'] and not property['x-relationship'] -%}
-        {%- set type = self::get_type(name=name,property=property) | snake_case-%}
+        {%- set type = get_type(name=name,property=property) | snake_case-%}
         {%- set type_pascal = type | pascal_case -%}
         {{ "use crate::models::enums::" ~ type ~ "::{" ~ type_pascal ~ "};" }}
     {%- endif -%}
@@ -275,26 +275,19 @@
 
 {%- macro seaorm_prelude_imports(entity) -%}
 {%- set possible_imports = ['DateTimeWithTimeZone','TimeDate','TimeTime'] -%}
-{%- set_global use_imports = [] -%}
-{%- for name,property in entity.properties -%}
-    {%- set type = self::get_type(name=name, property=property) -%}
-    {% if type in possible_imports and type not in use_imports -%}
-        {%- set_global use_imports = use_imports | concat(with=type) -%}
-    {% endif -%}
-{% endfor -%}
-{%- if use_imports | length > 0 -%}
-{%- set use_imports_str = use_imports | join(sep=",") -%}
-{{ "use sea_orm::prelude::{" ~ use_imports_str ~ "};"}}
+{%- set imports = entity.properties | items | map(attribute='type') | select("in", possible_imports) -%}
+{%- if imports | length > 0 -%}
+    {{ "use sea_orm::prelude::{" ~ use_imports | join(",") ~ "};"}}
 {%- endif -%}
 {%- endmacro -%}
 
 {% macro get_m21_relations_type(entity) -%}
-{% set_global relations = [] -%}
-{% if entity.properties -%}
-{% for name, property in entity.properties -%}
-{% if self::relation_is_many_to_one(property=property)=='true' -%}
-{% set relation = self::get_relation(property=property) -%}
-{% set_global relations = relations | concat(with=relation) -%}
+{% set relations = [] -%}
+{% if entity.properties | items  -%}
+{% for name, property in entity.properties | items  -%}
+{% if relation_is_many_to_one(property=property)=='true' -%}
+{% set relation = get_relation(property=property) -%}
+{% set relations = relations | concat(with=relation) -%}
 {% endif -%}
 {% endfor -%}
 {% endif -%}
@@ -303,7 +296,7 @@
 
 {% macro m21_relation_equal_name(name,property) -%}
 {% filter trim -%}
-{{ self::relation_is_many_to_one(property=property)=='true' and  self::get_relation(property=property)|snake_case==name|snake_case }}
+{{ relation_is_many_to_one(property=property)=='true' and  get_relation(property=property)|snake_case==name|snake_case }}
 {% endfilter -%}
 {% endmacro -%}
 

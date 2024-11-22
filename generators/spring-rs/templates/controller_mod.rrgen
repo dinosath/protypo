@@ -4,7 +4,7 @@ to: {{ values.outputFolder }}/src/controllers/mod.rs
 message: "Controllers mod.rs was created successfully."
 ===
 pub mod utils;
-{% for entity_name,entity in entities -%}
+{% for entity_name,entity in entities | items -%}
 {% if entity.properties -%}
 pub mod {{ entity.title | snake_case }};
 {% endif -%}

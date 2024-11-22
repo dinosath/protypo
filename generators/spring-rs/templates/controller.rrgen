@@ -1,7 +1,7 @@
 {# generate controllers #}
 {% import "_macros.tpl" as macros %}
 
-{% for entity_name,entity in entities -%}
+{% for entity_name,entity in entities | items -%}
 {% if entity.properties %}
 
 {% set file_name = entity.title | snake_case -%}
@@ -14,19 +14,19 @@ use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},err
 use spring_sea_orm::{pagination::{Pagination, PaginationExt},DbConn, };
 use serde::{Deserialize, Serialize};
 use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, EntityTrait, QueryFilter, Set, IntoActiveModel};
-{{ macros::seaorm_prelude_imports(entity=entity)|trim }}
+{{ macros.seaorm_prelude_imports(entity) | trim }}
 use crate::models::{{ file_name }}::{ActiveModel, Entity, Model, Column};
 use super::utils::ListParams;
 
-{% if macros::has_one_to_many_relation(entity=entity)=='true' or macros::has_many_to_many_relation(entity=entity)=='true' -%}
+{% if macros.has_one_to_many_relation(entity=entity)=='true' or macros.has_many_to_many_relation(entity=entity)=='true' -%}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ResponseModel {
-    {% for name, property in entity.properties -%}
+    {% for name, property in entity.properties | items -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    {%- if macros::relation_is_many_to_many(property=property)=='true' or macros::relation_is_one_to_many(property=property)=='true'-%}
+    {%- if macros.relation_is_many_to_many(property=property)=='true' or macros.relation_is_one_to_many(property=property)=='true'-%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
-    pub {{ name | snake_case }}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endif -%}
     {% endfor %}
 }
@@ -35,20 +35,20 @@ pub struct ResponseModel {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Params {
-    {% for name, property in entity.properties -%}
+    {% for name, property in entity.properties | items -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
-    {%- if macros::relation_is_many_to_many(property=property)=='true' -%}
+    {%- if macros.relation_is_many_to_many(property=property)=='true' -%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
-    pub {{ name | snake_case }}: {{ macros::get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endif -%}
     {% endfor %}
 }
 
 impl Params {
     fn update(&self, item: &mut ActiveModel) {
-      {% for name, property in entity.properties -%}
-        {%- if property.readOnly or macros::relation_is_many_to_many(property=property)=='true' -%}{% continue -%}{%- endif -%}
+      {% for name, property in entity.properties | items -%}
+        {%- if property.readOnly or macros.relation_is_many_to_many(property=property)=='true' -%}{% continue -%}{%- endif -%}
         {%- if property.type  -%}
       item.{{ name | snake_case }} = Set(self.{{ name | snake_case }}.clone());
         {% endif -%}

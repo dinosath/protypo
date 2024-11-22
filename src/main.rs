@@ -1,25 +1,19 @@
 mod generator;
+mod filters;
 
-use std::{fs, io};
-use std::fs::File;
-use std::io::copy;
-use std::path::{Path, PathBuf};
+use crate::generator::{install_template, Generator};
 use anyhow::{anyhow, Error};
 use clap::Parser;
 use clap_derive::Subcommand;
-use futures::future::err;
 use jsonptr::Pointer;
 use reqwest::Url;
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use tokio::io::AsyncBufReadExt;
+use std::fs;
+use std::fs::File;
+use std::path::{Path, PathBuf};
 use tracing::{debug, error, info};
 use tracing_subscriber::EnvFilter;
-use tracing_subscriber::fmt::format;
-use zip::ZipArchive;
-use crate::generator::{dereference_config, install_template, Generator};
-use minijinja::{Environment, context};
 
 /// A fictional versioning CLI
 #[derive(Parser, Debug)]
@@ -86,16 +80,9 @@ enum Commands {
     },
     /// use generator to create output
     Generate {
-        /// path to config file
-        #[arg(short='c',long)]
-        config_filepath: Option<String>,
-
-        //path to generator
+        /// path to generator
         #[arg(short='p',long)]
         generator_path: Option<PathBuf>,
-
-        #[arg(short='o',long)]
-        output_directory: Option<PathBuf>,
         /// the name of the generator
         #[arg(short, long, conflicts_with = "uri")]
         name: Option<String>,
@@ -132,7 +119,7 @@ async fn main() -> Result<(), Error> {
             create_new_template(name);
             Ok(())
         },
-        Commands::Generate { name,version,uri,config_filepath , output_directory, generator_path, sets} => {
+        Commands::Generate { name,version,uri, generator_path, sets} => {
             let mut ctx = Context::default();
 
             let mut values = json!({});

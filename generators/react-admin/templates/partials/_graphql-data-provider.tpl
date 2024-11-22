@@ -2,7 +2,7 @@
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 import { omit } from "lodash";
 
-const apiUrl = 'http://localhost:5150/api/graphql';
+const apiUrl = '/api/graphql';
 
 const client = new ApolloClient({
     uri: apiUrl,
@@ -22,21 +22,21 @@ const client = new ApolloClient({
 
 //todo add nodes and ids in relationships
 const fields = {
-    {% for entity_name,entity in entities -%}
+    {% for entity_name,entity in entities | items -%}
     {%- if not entity.properties -%}{%- continue -%}{%- endif -%}
-    '{{ entity.title | plural | kebab_case }}': "id createdAt updatedAt {{macros::get_all_properties_by_name(entity=entity)}}"{%- if not loop.last -%},{% endif %}
+    '{{ entity.title | plural | kebab_case }}': "id createdAt updatedAt {{get_all_properties_by_name(entity=entity)}}"{%- if not loop.last -%},{% endif %}
     {% endfor %}
 };
 
 const pascal = {
-    {% for entity_name,entity in entities -%}
+    {% for entity_name,entity in entities | items -%}
     {%- if not entity.properties -%}{%- continue -%}{%- endif -%}
     '{{ entity.title | plural | kebab_case }}': "{{ entity.title | pascal_case }}"{%- if not loop.last -%},{% endif %}
     {% endfor %}
 };
 
 const camel = {
-    {% for entity_name,entity in entities -%}
+    {% for entity_name,entity in entities | items -%}
     {%- if not entity.properties -%}{%- continue -%}{%- endif -%}
     '{{ entity.title | plural | kebab_case }}': "{{ entity.title | camel_case }}"{%- if not loop.last -%},{% endif %}
     {% endfor %}
