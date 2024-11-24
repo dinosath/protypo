@@ -8,12 +8,13 @@ keywords:
   - web-framework
   - rest
 dependencies:
-  - name: jsonschema-commons
+  - name: seaorm-entities
     version: 0.0.1
-    url: "file://../jsonschema-commons"
+    url: "file://../seaorm-entities"
     tags:
-      - common
-      - jsonschema
+      - seaorm
+      - spring-rs
+      - rust
 sources:
   - https://github.com/dinosath/protypo
 maintainers:

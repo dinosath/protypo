@@ -1,7 +1,7 @@
 {# generate entities #}
-{% import "_macros.tpl" as macros %}
+{% import "_macros.jinja" as macros %}
 
-{% for entity_name,entity in entities -%}
+{% for entity_name,entity in entities | items -%}
 {% if not entity.enum %}{% continue %}{% endif %}
 
 {% set file_name = entity.title | snake_case -%}

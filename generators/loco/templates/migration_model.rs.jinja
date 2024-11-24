@@ -1,5 +1,5 @@
 {# generate controllers #}
-{% import "_macros.tpl" as macros %}
+{% import "_macros.jinja" as macros %}
 
 {% for entity_name,entity in entities -%}
 {% set file_name = entity.title | snake_case -%}
@@ -106,7 +106,7 @@ impl MigrationTrait for Migration {
 
 {% set m21_relations = get_m21_relations_type(entity=entity) | trim -%}
 {% if m21_relations | length > 0 -%}
-{% set m21_relations = m21_relations | split(pat=",") | unique -%}
+{% set m21_relations = m21_relations | split(",") | unique -%}
 {% for relation in m21_relations -%}
 #[derive(DeriveIden)]
 enum {{ relation | pascal_case }} {

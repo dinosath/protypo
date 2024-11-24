@@ -145,20 +145,24 @@
 {%- macro get_relation(property) -%}
 {%- filter trim -%}
     {% if property['$ref'] -%}
-    {{ property['$ref'] | split(pat=".")|first }}
-    {% elif relation_is_many_to_many(property=property)=='true' -%}
-    {{ property['items']['$ref'] | split(pat=".") | first }}
+    {{ property['$ref'] | split(".")|first }}
+    {% elif relation_is_many_to_many(property=property) and items in property -%}
+    {{ property['items']['$ref'] | split(".") | first }}
     {%- endif -%}
 {%- endfilter -%}
 {%- endmacro -%}
 
 {%- macro get_relation_from_string(string) -%}
-{{ string | split(pat=".") | first }}
+{{ string | split(".") | first }}
 {%- endmacro -%}
 
 
 {%- macro relation_is_many_to_one(property) -%}
-{{ property['x-relationship'] and property['x-relationship']=="many-to-one"}}
+{%- if 'x-relationship' in property and property['x-relationship']=="many-to-one" -%}
+  {{ true }}
+{% else -%}
+  {{ false }}
+{% endif -%}
 {%- endmacro -%}
 
 {%- macro relation_is_one_to_many(property) -%}
@@ -166,11 +170,15 @@
 {%- endmacro -%}
 
 {%- macro relation_is_many_to_many(property) -%}
-{{ property.type and property.type=="array" and property.items and property['items']['x-relationship'] and property['items']['x-relationship']=="many-to-many"}}
+{%- if type in property and property.type and property.type == "array" and property.items and 'x-relationship' in property.items and property.items['x-relationship'] == "many-to-many" -%}
+  {{ true }}
+{% else -%}
+  {{ false }}
+{% endif -%}
 {%- endmacro -%}
 
 {%- macro is_relation(property) -%}
-{{ relation_is_many_to_one(property=property)=='true' or relation_is_one_to_many(property=property)=='true' or relation_is_many_to_many(property=property)=='true'  }}
+{{ relation_is_many_to_one(property=property) or relation_is_one_to_many(property=property) or relation_is_many_to_many(property=property)  }}
 {%- endmacro -%}
 
 {%- macro get_m2m_relation(left,property) -%}
@@ -178,9 +186,9 @@
 {% if relation_is_many_to_many(property=property) %}
 {% set right = get_relation(property=property) %}
 {% set relation_array = [] %}
-{% set relation_array = relation_array | concat(with=left) %}
-{% set relation_array = relation_array | concat(with=right) %}
-{{relation_array | sort | join(sep="_")}}
+{% set relation_array = relation_array + [left] %}
+{% set relation_array = relation_array + [right] %}
+{{relation_array | sort | join("_")}}
 {% endif%}
 {%- endfilter -%}
 {%- endmacro -%}
@@ -189,51 +197,51 @@
 {% set created_relations = [] -%}
 {% if entity.properties | items  -%}
     {% for name,property in entity.properties | items  -%}
-        {% if relation_is_many_to_many(property=property)=='true' -%}
+        {% if relation_is_many_to_many(property=property) -%}
             {% set relation = get_m2m_relation(left=entity.title, property=property) | trim -%}
-            {% set created_relations = created_relations | concat(with=relation) -%}
-        {% elif is_relation(property=property)=='true' -%}
+            {% set created_relations = created_relations | concat(relation) -%}
+        {% elif is_relation(property=property) -%}
             {% set relation = get_relation(property=property) | trim -%}
-            {% set created_relations = created_relations | concat(with=relation) -%}
+            {% set created_relations = created_relations | concat(relation) -%}
         {% endif -%}
     {% endfor -%}
 {% endif -%}
-{{created_relations | unique | sort | join(sep=",")}}
+{{created_relations | unique | sort | join(",")}}
 {%- endmacro -%}
 
 {%- macro get_m2m_relations(entities) -%}
 {% set created_relations = [] %}
-{% for entity_name,entity in entities -%}
+{% for entity_name,entity in entities | items -%}
     {% if entity.properties | items  %}
         {% for name,property in entity.properties | items  -%}
-            {% if relation_is_many_to_many(property=property)=='true' -%}
+            {% if relation_is_many_to_many(property=property) -%}
                 {% set relation = get_m2m_relation(left=entity.title, property=property) %}
-                {% set created_relations = created_relations | concat(with=relation) %}
+                {% set created_relations = created_relations + [relation] %}
             {% endif %}
         {% endfor %}
     {% endif %}
 {% endfor -%}
-{{created_relations | unique | sort | join(sep=",")}}
+{{created_relations | unique | sort | join(",")}}
 {%- endmacro -%}
 
 {%- macro get_m21_relations(entity) -%}
 {% set created_relations = [] -%}
 {% if entity.properties | items  -%}
     {% for name,property in entity.properties | items  -%}
-        {% if relation_is_many_to_one(property=property)=='true' -%}
+        {% if relation_is_many_to_one(property=property) -%}
             {% set relation = get_relation(left=entity.title, property=property) | trim -%}
-            {% set created_relations = created_relations | concat(with=relation) -%}
+            {% set created_relations = created_relations | concat(relation) -%}
         {% endif -%}
     {% endfor -%}
 {% endif -%}
-{{created_relations | unique | sort | join(sep=",")}}
+{{created_relations | unique | sort | join(",")}}
 {%- endmacro -%}
 
 
 {%- macro has_many_to_one_relation(entity) -%}
 {%- set has_many_to_one_relation = false -%}
 {% for name,property in entity.properties | items  -%}
-    {% if relation_is_many_to_one(property=property)=='true' -%}
+    {% if relation_is_many_to_one(property=property) -%}
         {%- set has_many_to_one_relation = true -%}
         {% break -%}
     {% endif -%}
@@ -244,7 +252,7 @@
 {%- macro has_many_to_many_relation(entity) -%}
 {%- set has_many_to_many_relation = false -%}
 {% for name,property in entity.properties | items  -%}
-    {% if relation_is_many_to_many(property=property)=='true' -%}
+    {% if relation_is_many_to_many(property=property) -%}
         {%- set has_many_to_many_relation = true -%}
         {% break -%}
     {% endif -%}
@@ -255,7 +263,7 @@
 {%- macro has_one_to_many_relation(entity) -%}
 {%- set has_one_to_many_relation = false -%}
 {% for name,property in entity.properties | items  -%}
-    {% if relation_is_one_to_many(property=property)=='true' -%}
+    {% if relation_is_one_to_many(property=property) -%}
         {%- set has_one_to_many_relation = true -%}
         {% break -%}
     {% endif -%}
@@ -285,18 +293,18 @@
 {% set relations = [] -%}
 {% if entity.properties | items  -%}
 {% for name, property in entity.properties | items  -%}
-{% if relation_is_many_to_one(property=property)=='true' -%}
+{% if relation_is_many_to_one(property=property) -%}
 {% set relation = get_relation(property=property) -%}
-{% set relations = relations | concat(with=relation) -%}
+{% set relations = relations | concat(relation) -%}
 {% endif -%}
 {% endfor -%}
 {% endif -%}
-{{ relations | join(sep=",")}}
+{{ relations | join(",")}}
 {% endmacro -%}
 
 {% macro m21_relation_equal_name(name,property) -%}
 {% filter trim -%}
-{{ relation_is_many_to_one(property=property)=='true' and  get_relation(property=property)|snake_case==name|snake_case }}
+{{ relation_is_many_to_one(property=property) and  get_relation(property=property)|snake_case==name|snake_case }}
 {% endfilter -%}
 {% endmacro -%}
 

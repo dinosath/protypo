@@ -1,4 +1,4 @@
-{% import "_macros.tpl" as macros -%}
+{% import "_macros.jinja" as macros -%}
 
 {%- if features and 'graphql' in features  -%}
 {% set file_name = values.outputFolder ~ "/src/graphql/query_root.rs" %}
@@ -32,7 +32,7 @@ pub fn schema(
                 {% if not entity.properties %}{% continue %}{% endif %}
                 {{ entity.title | snake_case }}{%- if not loop.last -%},{% endif -%}
             {% endfor %}
-            {% set relations = get_m2m_relations(entities=entities) | split(pat=",") -%}
+            {% set relations = get_m2m_relations(entities=entities) | split(",") -%}
             {%- if relations and relations | length > 0 -%},{% endif %}
             {% for relation in relations -%}
                 {{ relation | snake_case }}{%- if not loop.last -%},{% endif -%}

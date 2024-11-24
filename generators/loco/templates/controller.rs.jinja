@@ -1,5 +1,5 @@
 {# generate controllers #}
-{% import "_macros.tpl" as macros %}
+{% import "_macros.jinja" as macros %}
 
 {% for entity_name,entity in entities -%}
 {% if entity.properties %}
@@ -15,7 +15,7 @@ message: "Controller `{{module_name}}` was added successfully."
 use loco_rs::prelude::*;
 use serde::{Deserialize, Serialize};
 use axum::{debug_handler,extract::Query};
-{{ seaorm_prelude_imports(entity=entity)|trim }}
+{{ macros.seaorm_prelude_imports(entity=entity)|trim }}
 use crate::models::entities::{{ file_name }}::{ActiveModel, Entity, Model, Column};
 use super::utils::ListParams;
 

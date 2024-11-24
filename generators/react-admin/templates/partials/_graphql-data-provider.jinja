@@ -1,4 +1,4 @@
-{% import "_macros_front.tpl" as macros -%}
+{% import "_macros_front.jinja" as macros -%}
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 import { omit } from "lodash";
 
@@ -24,7 +24,7 @@ const client = new ApolloClient({
 const fields = {
     {% for entity_name,entity in entities | items -%}
     {%- if not entity.properties -%}{%- continue -%}{%- endif -%}
-    '{{ entity.title | plural | kebab_case }}': "id createdAt updatedAt {{get_all_properties_by_name(entity=entity)}}"{%- if not loop.last -%},{% endif %}
+    '{{ entity.title | plural | kebab_case }}': "id createdAt updatedAt {{ macros.get_all_properties_by_name(entity=entity)}}"{%- if not loop.last -%},{% endif %}
     {% endfor %}
 };
 

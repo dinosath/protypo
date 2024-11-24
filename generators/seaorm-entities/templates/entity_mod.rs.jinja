@@ -1,11 +1,11 @@
 {# generate controllers #}
-{% import "_macros.tpl" as macros -%}
+{% import "_macros.jinja" as macros -%}
 to: {{ values.outputFolder }}/src/models/mod.rs
 message: "Entities mod.rs was created successfully."
 ===
 pub mod enums;
-{% for entity_name,entity in entities -%}
-{% if entity.properties -%}
+{% for entity_name,entity in entities | items -%}
+{% if properties in entity -%}
 pub mod {{ entity.title | snake_case }};
 {% endif -%}
 {% endfor -%}

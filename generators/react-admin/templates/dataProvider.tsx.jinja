@@ -2,9 +2,9 @@ to: {{ values.outputFolder }}/src/dataProvider.ts
 message: "File for ui `package.json` was created successfully."
 ===
 {% if features and 'graphql' in features -%}
-{% include "_graphql-data-provider.tpl" -%}
+{% include "_graphql-data-provider.jinja" -%}
 {% elif features and 'jhipster' in features -%}
-{% include "_jhipster-data-provider.tpl" -%}
+{% include "_jhipster-data-provider.jinja" -%}
 {% else -%}
-{% include "_rest-data-provider.tpl" -%}
+{% include "_rest-data-provider.jinja" -%}
 {% endif -%}

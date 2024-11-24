@@ -1,4 +1,4 @@
-{% import "_macros.tpl" as macros %}
+{% import "_macros.jinja" as macros %}
 
 
 to: {{ values.outputFolder }}/migration/src/lib.rs
@@ -26,7 +26,7 @@ impl MigratorTrait for Migrator {
                     {% if dependencies | length == 0 -%}
                         Box::new({{ entity.title | snake_case }}::Migration),
                     {% else -%}
-                        {%- set entity_with_dependencies = entity_with_dependencies | concat(with=entity.title) -%}
+                        {%- set entity_with_dependencies = entity_with_dependencies | concat(entity.title) -%}
                     {%- endif -%}
                 {%- endif -%}
             {% endfor -%}

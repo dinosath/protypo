@@ -1,5 +1,5 @@
 {# generate entities #}
-{% import "_macros.tpl" as macros %}
+{% import "_macros.jinja" as macros %}
 
 {% for entity_name,entity in entities -%}
 {% if entity.properties %}
@@ -15,8 +15,8 @@ injections:
 ===
 use sea_orm::entity::prelude::*;
 use serde::{Serialize, Deserialize};
-{{ enum_imports(entity=entity) }}
-{{ seaorm_prelude_imports(entity=entity)|trim }}
+{{ macros.enum_imports(entity) }}
+{{ macros.seaorm_prelude_imports(entity=entity)|trim }}
 
 {% for name,property in entity.properties -%}
     {% if property.enum -%}
@@ -75,16 +75,16 @@ pub enum Relation {
 {% for name,property in entity.properties -%}
     {%- set relation = get_relation(property=property) | snake_case -%}
     {%- if is_relation(property=property)=='true' and relation not in implemented_relations-%}
-        {%- set implemented_relations = implemented_relations | concat(with=relation)  -%}
+        {%- set implemented_relations = implemented_relations | concat(relation)  -%}
         {%- if relation_is_many_to_many(property=property)=='true'-%}
 impl Related<crate::models::entities::{{ relation }}::Entity> for Entity {
     {% set relation = get_m2m_relation(left=entity.title, property=property) -%}
     fn to() -> RelationDef {
-        crate::models::entities::{{ relation | snake_case }}::Relation::{{ relation | split(pat="_") | first | pascal_case}}.def()
+        crate::models::entities::{{ relation | snake_case }}::Relation::{{ relation | split("_") | first | pascal_case}}.def()
     }
 
     fn via() -> Option<RelationDef> {
-        Some(crate::models::entities::{{ relation | snake_case }}::Relation::{{ relation | split(pat="_") | last | pascal_case }}.def().rev())
+        Some(crate::models::entities::{{ relation | snake_case }}::Relation::{{ relation | split("_") | last | pascal_case }}.def().rev())
     }
 }
 
@@ -110,7 +110,7 @@ impl Related<crate::models::entities::{{ relation }}::Entity> for Entity {
 pub enum RelatedEntity {
     {% set relations = get_all_relations(entity=entity) | trim -%}
     {% if relations !="" -%}
-    {% for relation in relations|split(pat=",") -%}    
+    {% for relation in relations|split(",") -%}
     #[sea_orm(entity = "crate::models::entities::{{ relation | snake_case }}::Entity")]
     {{ relation | pascal_case }}{%- if not loop.last -%},{% endif -%}
     {% endfor -%}
@@ -119,7 +119,7 @@ pub enum RelatedEntity {
 {% endif -%}
 
 {% if file_name=="user" -%}
-{% include "_user_active_model.tpl" -%}
+{% include "_user_active_model.jinja" -%}
 {% else -%}
 impl ActiveModelBehavior for ActiveModel {
 }
