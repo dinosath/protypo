@@ -1,29 +1,3 @@
-frontmatterSeparator: "===\n"
-documentSeparator: "---\n"
-applicationName: "erp"
-applicationType: monolith
-authenticationType: jwt
-cacheProvider: "redis"
-clientFramework: "svelte"
-dataProviderUrl: "http://localhost:8080"
-authProviderUrl: "http://localhost:8080"
-clientPackageManager: "npm"
-clientTheme: "none"
-clientThemeVariant: ""
-databaseType: "sql"
-devDatabaseType: "h2Disk"
-devServerPort: 9060
-enableTranslation: false
-feignClient: null
-jwtSecretKey: "MDFkNmU1OWU0NDM3ZmFjMzVlYzdmMTMwNmQ1NzU2ZTllZmZhMjkzYWEzZWUzZTExOWQwZTE4OWJkZWZhYWFiNzI0MTkwODQ4NGI2MzA5MzIxMDZiODBiNzMzMzQ3YzVjN2FjMmVlMzgzZjA1YjMyYTJiMWM1YmQ0OTdjNzJjOWY="
-messageBroker: false
-nativeLanguage: "en"
-reactive: false
-searchEngine: false
-serverPort: null
-serverSideOptions: []
-serviceDiscoveryType: false
-syncUserWithIdp: null
-testFrameworks: []
-websocket: false
-withAdminUi: fals
+application:
+  name: react-admin-example
+outputFolder: "./gen"

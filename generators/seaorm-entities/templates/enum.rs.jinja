@@ -12,7 +12,7 @@ injections:
 - into: {{ values.outputFolder }}/src/models/enums/mod.rs
   append: true
   content: "pub mod {{ file_name }};"
-===
+---
 use sea_orm::entity::prelude::*;
 use serde::{Serialize, Deserialize};
 

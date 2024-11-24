@@ -2,7 +2,7 @@
 {% import "_macros.jinja" as macros -%}
 to: {{ values.outputFolder }}/src/app.rs
 message: "File app.rs was created successfully."
-===
+---
 use std::path::Path;
 use async_trait::async_trait;
 use loco_rs::{app::{AppContext, Hooks, Initializer},bgworker::{BackgroundWorker, Queue},boot::{create_app, BootResult, StartMode},config,

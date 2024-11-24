@@ -1,6 +1,6 @@
 to: {{ values.outputFolder }}/src/App.tsx
 message: "File `App.tsx` was created successfully."
-===
+---
 import { Admin, Resource } from "react-admin";
 import { dataProvider } from './dataProvider';
 {% for entity_name,entity in entities | items -%}

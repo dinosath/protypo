@@ -22,7 +22,7 @@ injections:
     {% if with_db -%}
     shuttle-shared-db = { version = "{{ values.deployment.shuttle.runtimeVersion }}", features = ["postgres"] }
     {%- endif %}
-===
+---
 use loco_rs::boot::{create_app, StartMode};
 use loco_rs::environment::Environment;
 use {{ values.application.name }}::app::App;

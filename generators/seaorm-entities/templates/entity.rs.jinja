@@ -6,9 +6,10 @@
 
 {% set file_name = entity.title | snake_case -%}
 {% set module_name = file_name | pascal_case -%}
+---
 to: {{ values.outputFolder }}/src/models/{{ file_name }}.rs
 message: "Entity `{{module_name}}` was added successfully."
-===
+---
 use sea_orm::entity::prelude::*;
 use serde::{Serialize, Deserialize};
 {{ macros.enum_imports(entity) }}

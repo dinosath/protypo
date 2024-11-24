@@ -1,10 +1,10 @@
+{% for entity_name,entity in entities | items -%}
 {# generate model ui #}
-{% import "_macros_front.jinja" as macros %}
-{% import "_macros.jinja" as core %}
-to: {{ values.outputFolder }}/app.jdl
+{%- import "_macros_front.jinja" as macros -%}
+{% import "_macros.jinja" as core -%}
+to: {{ values.outputFolder }}/app{{ loop.index }}.jdl
 message: "JDL file for app was created successfully."
-===
-
+---
 application {
   config {
     baseName {{ applicationName }},
@@ -18,7 +18,7 @@ application {
   entities *
 }
 
-{% for entity_name,entity in entities -%}
+
 {% if entity.properties %}
 {% set file_name = entity.title | snake_case -%}
 {% set module_name = file_name | pascal_case -%}

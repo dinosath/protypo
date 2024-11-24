@@ -6,13 +6,14 @@
 {% set left = relation | split("_") | first %}
 {% set right = relation | split("_") | last %}
 {% set file_name = relation | snake_case %}
+---
 to: {{ values.outputFolder }}/src/models/entities/{{ file_name }}.rs
 message: "Entity `{{ file_name }}` was added successfully."
 injections:
 - into: {{ values.outputFolder }}/src/models/entities/mod.rs
   append: true
   content: "pub mod {{ file_name }};"
-===
+---
 use sea_orm::entity::prelude::*;
 use serde::{Serialize, Deserialize};
 
@@ -67,5 +68,4 @@ pub enum RelatedEntity {
 
 impl ActiveModelBehavior for ActiveModel {
 }
----
 {% endfor -%}

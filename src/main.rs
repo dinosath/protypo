@@ -1,5 +1,6 @@
 mod generator;
 mod filters;
+mod files;
 
 use crate::generator::{install_template, Generator};
 use anyhow::{anyhow, Error};

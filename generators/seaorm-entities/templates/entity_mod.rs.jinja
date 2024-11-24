@@ -2,7 +2,7 @@
 {% import "_macros.jinja" as macros -%}
 to: {{ values.outputFolder }}/src/models/mod.rs
 message: "Entities mod.rs was created successfully."
-===
+---
 pub mod enums;
 {% for entity_name,entity in entities | items -%}
 {% if properties in entity -%}

@@ -5,9 +5,10 @@
 {% set file_name = entity.title | snake_case -%}
 {% set module_name = file_name | pascal_case -%}
 {% set enum_name = entity.title | pascal_case -%}
+---
 to: {{ values.outputFolder }}/migration/src/{{ file_name }}.rs
 message: "Migration `{{module_name}}` was added successfully."
-===
+---
 use loco_rs::schema::{table_auto_tz,timestamptz,timestamptz_null};
 use sea_orm_migration::{prelude::*, schema::*};
 {% if entity.enum %}
@@ -149,5 +150,4 @@ pub enum {{ entity.title|pascal_case }} {
 {% endfor %}
 }
 {% endif %}
----
 {% endfor -%}

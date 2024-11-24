@@ -1,7 +1,7 @@
 {% set file_name= values.outputFolder ~"/tests/requests/prepare_data.rs" %}
 to: {{file_name}}
 message: "File `{{file_name}}` was created successfully."
-===
+---
 use axum::http::{HeaderName, HeaderValue};
 use loco_rs::{app::AppContext, TestServer};
 use {{ values.application.name }}::{models::users, views::auth::LoginResponse};

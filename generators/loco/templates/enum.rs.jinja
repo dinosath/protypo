@@ -6,13 +6,14 @@
 
 {% set file_name = entity.title | snake_case -%}
 {% set module_name = file_name | pascal_case -%}
+---
 to: {{ values.outputFolder }}/src/models/enums/{{ file_name }}.rs
 message: "Enum `{{module_name}}` was added successfully."
 injections:
 - into: {{ values.outputFolder }}/src/models/enums/mod.rs
   append: true
   content: "pub mod {{ file_name }};"
-===
+---
 use sea_orm::entity::prelude::*;
 use serde::{Serialize, Deserialize};
 
@@ -24,5 +25,4 @@ pub enum {{ entity.title | pascal_case }}{
         {{ value }}{%- if not loop.last -%},{% endif -%}
         {% endfor %}
 }
----
 {% endfor -%}

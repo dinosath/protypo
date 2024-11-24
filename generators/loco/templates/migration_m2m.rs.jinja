@@ -7,6 +7,7 @@
 {% set left = relation | split("_") | first -%}
 {% set right = relation | split("_") | last -%}
 
+---
 to: {{ values.outputFolder }}/migration/src/{{ file_name }}.rs
 message: "Migration `{{file_name}}` was added successfully."
 injections:
@@ -16,7 +17,7 @@ injections:
 - into: {{ values.outputFolder }}/migration/src/lib.rs
   after: "//migrations_end"
   content: "Box::new({{ file_name }}::Migration),"
-===
+---
 use loco_rs::schema::{table_auto_tz,timestamptz,timestamptz_null};
 use sea_orm_migration::{prelude::*, schema::*};
 
@@ -87,5 +88,4 @@ enum {{ right | pascal_case }} {
     Table,
     Id
 }
----
 {% endfor -%}

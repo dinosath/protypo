@@ -1,6 +1,7 @@
 use crate::path_to_json;
 use crate::{Context, Url};
 use crate::filters;
+use crate::files;
 use flate2::bufread::GzDecoder;
 use git2::Repository;
 use glob::glob;
@@ -20,6 +21,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_stream::wrappers::ReadDirStream;
 use tracing::{debug, error, info};
 use zip::ZipArchive;
+use crate::files::RRgen;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct Generator {
@@ -303,9 +305,17 @@ impl Generator {
             self.templates.iter()
                 .filter(|(filename, _template)| !path_is_partial(filename))
                 .for_each(|(filename, content)| {
+                    debug!("Generating templates for {:?}: {:?}", filename, content);
                     let template = env.get_template(filename).unwrap();
-                    let render = template.render(ctx);
-                    println!("{}", render.unwrap());
+                    let render = template.render(ctx).expect("Failed to render template");
+                    // let document_separator= std::env::var("DOCUMENT_SEPARATOR").unwrap_or_else(|_| "---".to_string());
+                    // debug!("render:{:?}", render);
+                    print!("render:{:?}", render);
+                    // render.split(document_separator).for_each(|line| {
+                        let rrgen: RRgen = RRgen::default();
+                        rrgen.generate(render.as_str()).unwrap();
+                        // rrgen.generate(line.clone().parse().unwrap());
+                    // });
                 });
         }
 
@@ -363,13 +373,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
 }
 
 fn path_is_partial(filename: &String) -> bool {
-    let file_path = Path::new(filename);
-    if let Some(filename) = file_path.file_name() {
-        let filename = filename.to_str().unwrap();
-        file_path.is_file() && filename.starts_with("_")
-    } else {
-        false
-    }
+    filename.starts_with("_")
 }
 
 /// Collects the templates of the generator and the generator's dependencies with the dependencies' first so that any ancestor
