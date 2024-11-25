@@ -38,7 +38,7 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
     {%- for name, property in entity.properties | items -%}
-    {% if macros.relation_is_many_to_many(property=property) or macros.relation_is_one_to_many(property=property) -%}{% continue -%}{% endif -%}
+    {% if macros.relation_is_many_to_many(property) or macros.relation_is_one_to_many(property=property) -%}{% continue -%}{% endif -%}
     {{ macros.validations(name=name,property=property) }}
     pub {{ name | snake_case }}{% if macros.relation_is_many_to_one(property=property) and macros.get_relation(property=property) | snake_case == name | snake_case -%}_id{% endif -%}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }}{%- if not loop.last -%},{% endif -%}
     {% endfor %}
@@ -60,8 +60,8 @@ pub enum Relation {
     {{ name | pascal_case }},
 
     
-    {% elif macros.relation_is_many_to_many(property=property)-%}
-    {% set relation = macros.get_m2m_relation(left=entity.title, property=property) | snake_case-%}
+    {% elif macros.relation_is_many_to_many(property) -%}
+    {% set relation = macros.get_m2m_relation(property) | snake_case-%}
     #[sea_orm(has_many = "crate::models::{{ relation }}::Entity")]
     {{ relation | pascal_case }},
     {% endif -%}
@@ -73,9 +73,9 @@ pub enum Relation {
     {%- set relation = macros.get_relation(property=property) | snake_case -%}
     {%- if macros.is_relation(property=property) and relation not in implemented_relations-%}
         {%- set implemented_relations = implemented_relations + [relation]  -%}
-        {%- if macros.relation_is_many_to_many(property=property)-%}
+        {%- if macros.relation_is_many_to_many(property)-%}
 impl Related<crate::models::{{ relation }}::Entity> for Entity {
-    {% set relation = macros.get_m2m_relation(left=entity.title, property=property) -%}
+    {% set relation = macros.get_m2m_relation(property)=='true' -%}
     fn to() -> RelationDef {
         crate::models::{{ relation | snake_case }}::Relation::{{ relation | split("_") | first | pascal_case}}.def()
     }

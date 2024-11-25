@@ -1,30 +1,19 @@
-use crate::path_to_json;
-use crate::{Context, Url};
-use crate::filters;
-use crate::files;
-use flate2::bufread::GzDecoder;
-use git2::Repository;
+use tracing::error;
 use glob::glob;
 use json_value_merge::Merge;
-use minijinja::{context, Environment};
-use reqwest::{get, Client, Response};
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
-use std::io::{BufReader, Cursor, ErrorKind};
+use std::io::{Cursor, ErrorKind};
 use std::{fs, io, path::{Path, PathBuf}};
-use tar::Archive;
+use rrgen::RRgen;
 use tempfile::tempdir;
-use tokio::fs::{copy, create_dir_all, File};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio_stream::wrappers::ReadDirStream;
-use tracing::{debug, error, info};
+use tracing::{debug};
+use url::Url;
 use zip::ZipArchive;
-use crate::files::RRgen;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Generator {
+pub struct Generator {
     pub base_path: String,
     pub generator_yaml: GeneratorYaml,
     pub license: Option<String>,
@@ -118,15 +107,6 @@ pub struct Maintainer {
     pub url: Option<String>,
 }
 
-pub async fn install_template(uri: &String, destination: &PathBuf) {
-    let source = uri;
-    info!("Starting the install process...");
-    debug!("Source: {}, Destination: {}", source, destination.display());
-    let generator_dir = prepare_generator_source(uri).await.unwrap();
-    debug!("generator_dir:{}", generator_dir.display());
-    move_to_repo_root(generator_dir, destination).await.unwrap();
-}
-
 impl Generator {
     fn key(&self) -> String {
         format!("{}:{}", self.generator_yaml.name, self.generator_yaml.version)
@@ -201,7 +181,56 @@ impl Generator {
         generator_values.clone()
     }
 
-    pub fn copy_files(&self, values: Value) -> Result<(), io::Error> {
+    pub fn generate(&self, ctx: &Value) -> Result<(), io::Error> {
+        self.copy_files(ctx.clone())?;
+
+        let mut context = ctx.clone().as_object().unwrap().clone();
+        context.insert("entities".to_string(), self.collect_entities());
+
+
+        let mut rrgen = RRgen::default();
+        let templates = collect_templates(self);
+        templates.iter().for_each(|(filename,template)| rrgen.add_template(filename,template).unwrap());
+
+        self.generate_templates(&mut rrgen, &Value::Object(context))
+    }
+
+    fn generate_templates(&self, rrgen: &mut RRgen, ctx: &Value) -> Result<(), io::Error> {
+        debug!("Generator name:{:?},version:{:?}, base_path {:?}",self.generator_yaml.name, self.generator_yaml.version, self.base_path);
+        debug!("Generator name:{:?},version:{:?}, Start generating templates {:?}", self.generator_yaml.name, self.generator_yaml.version, self.templates);
+
+        let generator_values = self.get_values(ctx.get("values").unwrap().clone());
+
+        let generator_context = json!({
+            "values": generator_values,
+            "entities": ctx.get("entities").unwrap().clone(),
+        });
+
+        let ctx = &serde_json::to_value(generator_context.clone())?;
+
+
+        for dependency in &self.dependencies {
+            debug!("Generating templates for dependency: {:?}", dependency.generator_yaml.name);
+            dependency.generate_templates(rrgen, &generator_context)?;
+        }
+
+
+        debug!("Generator name:{:?},version:{:?}", self.generator_yaml.name, self.generator_yaml.version);
+        if self.templates.is_empty() {
+            debug!("There are no templates to generate");
+        } else {
+            let templates_iter = self.templates.iter().filter(|(filename, _template)| !path_is_partial(filename));
+            for (filename, content) in templates_iter {
+                debug!("Generating templates for {:?}: {:?}", filename, content);
+                rrgen.generate_by_template_with_name(filename, ctx)
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn copy_files(&self, values: Value) -> Result<(), io::Error> {
         let generator_values = self.get_values(values);
 
         let destination_dir_str = generator_values
@@ -223,7 +252,8 @@ impl Generator {
 
         if self.files.is_none() {
             debug!("{} - There are no files to copy",self.key());
-        } else {
+        }
+        else {
             debug!("{} - Copying files to destination {:?}", self.key(), destination_dir);
             let base_path = Path::new(&self.base_path).join("files");
             for file in self.files.clone().unwrap() {
@@ -249,80 +279,23 @@ impl Generator {
                 match fs::copy(&file_path, &destination) {
                     Ok(bytes_copied) => {
                         debug!("{} - Successfully copied file {:?} to {:?}. Bytes copied: {}", self.key(), file_path, destination, bytes_copied);
-                    }
+                    },
                     Err(e) => {
                         error!("{} - Failed to copy file {:?} to {:?}: {:?}", self.key(), file_path, destination, e);
                         return Err(e);
                     }
                 }
+
             }
         }
-
         for dependency in self.dependencies.iter() {
             dependency.copy_files(generator_values.clone())?;
         }
-
-        Ok(())
-    }
-    pub fn generate(&self, ctx: &Context) -> Result<(), io::Error> {
-        let mut env = Environment::new();
-        env.add_filter("snake_case", filters::snake_case);
-        env.add_filter("camel_case", filters::camel_case);
-        env.add_filter("kebab_case", filters::kebab_case);
-        env.add_filter("pascal_case", filters::pascal_case);
-        env.add_filter("lower_camel_case", filters::lower_camel_case);
-        env.add_filter("plural", filters::plural);
-        env.add_filter("singular", filters::singular);
-        let templates = collect_templates(self);
-        templates.iter().for_each(|(filename,template)| env.add_template(filename,template).unwrap());
-        self.generate_templates(env.clone(), &ctx)
-    }
-
-    fn generate_templates(&self, env: Environment, ctx: &Context) -> Result<(), io::Error> {
-        debug!("Generator name:{:?},version:{:?}, base_path {:?}",self.generator_yaml.name, self.generator_yaml.version, self.base_path);
-        debug!("Generator name:{:?},version:{:?}, Start generating templates {:?}", self.generator_yaml.name, self.generator_yaml.version, self.templates);
-
-        let generator_values = self.get_values(ctx.values.clone());
-
-        let generator_context = Context {
-            values: generator_values,
-            entities: ctx.entities.clone(),
-        };
-
-        let ctx = &serde_json::to_value(generator_context.clone())?;
-
-
-        for dependency in &self.dependencies {
-            debug!("Generating templates for dependency: {:?}", dependency.generator_yaml.name);
-            dependency.generate_templates(env.clone(), &generator_context)?;
-        }
-
-
-        debug!("Generator name:{:?},version:{:?}", self.generator_yaml.name, self.generator_yaml.version);
-        if self.templates.is_empty() {
-            debug!("There are no templates to generate");
-        } else {
-            self.templates.iter()
-                .filter(|(filename, _template)| !path_is_partial(filename))
-                .for_each(|(filename, content)| {
-                    debug!("Generating templates for {:?}: {:?}", filename, content);
-                    let template = env.get_template(filename).unwrap();
-                    let render = template.render(ctx).expect("Failed to render template");
-                    // let document_separator= std::env::var("DOCUMENT_SEPARATOR").unwrap_or_else(|_| "---".to_string());
-                    // debug!("render:{:?}", render);
-                    print!("render:{:?}", render);
-                    // render.split(document_separator).for_each(|line| {
-                        let rrgen: RRgen = RRgen::default();
-                        rrgen.generate(render.as_str()).unwrap();
-                        // rrgen.generate(line.clone().parse().unwrap());
-                    // });
-                });
-        }
-
         Ok(())
     }
 
-    pub(crate) fn collect_entities(&self) -> Value {
+
+    pub fn collect_entities(&self) -> Value {
         let mut values = self.entities.clone();
 
         for dep in &self.dependencies {
@@ -331,22 +304,6 @@ impl Generator {
         }
 
         values.clone()
-    }
-
-
-    fn read_dir_to_vec(dir_path: impl AsRef<Path>) -> Result<Vec<String>, io::Error> {
-        let mut file_names = Vec::new();
-        if dir_path.as_ref().exists() {
-            for entry in fs::read_dir(dir_path)? {
-                let entry = entry?;
-                if entry.file_type()?.is_file() {
-                    if let Some(file_name) = entry.file_name().to_str() {
-                        file_names.push(file_name.to_string());
-                    }
-                }
-            }
-        }
-        Ok(file_names)
     }
 }
 
@@ -395,25 +352,6 @@ fn collect_templates(generator: &Generator) -> HashMap<String, String> {
     templates
 }
 
-
-fn construct_destination_path(base_path: &Path, file: &Path, destination_dir: &Path) -> Result<PathBuf, io::Error> {
-    let base_path = base_path.canonicalize().map_err(|e| {
-        eprintln!("Error canonicalizing base_path: {:?}", e);
-        e
-    })?;
-
-    let file = file.canonicalize().map_err(|e| {
-        eprintln!("Error canonicalizing file: {:?}", e);
-        e
-    })?;
-
-    let destination_file_path = file.strip_prefix(&base_path).map_err(|e| {
-        eprintln!("Error stripping prefix from file: {:?}", e);
-        io::Error::new(io::ErrorKind::Other, "Strip prefix failed")
-    })?;
-    let destination = destination_dir.join(destination_file_path);
-    Ok(destination)
-}
 
 fn read_yaml_file<T: for<'de> Deserialize<'de>>(base_path: &Path, file_name: &str) -> Result<T, io::Error> {
     let file_path = base_path.join(file_name);
@@ -478,7 +416,24 @@ fn glob_to_map(pattern: &str) -> HashMap<String, String> {
         .collect()
 }
 
+fn construct_destination_path(base_path: &Path, file: &Path, destination_dir: &Path) -> Result<PathBuf, io::Error> {
+    let base_path = base_path.canonicalize().map_err(|e| {
+        eprintln!("Error canonicalizing base_path: {:?}", e);
+        e
+    })?;
 
+    let file = file.canonicalize().map_err(|e| {
+        eprintln!("Error canonicalizing file: {:?}", e);
+        e
+    })?;
+
+    let destination_file_path = file.strip_prefix(&base_path).map_err(|e| {
+        eprintln!("Error stripping prefix from file: {:?}", e);
+        io::Error::new(io::ErrorKind::Other, "Strip prefix failed")
+    })?;
+    let destination = destination_dir.join(destination_file_path);
+    Ok(destination)
+}
 
 fn read_optional_entities(base_path: &Path, dir_name: &str) -> Result<Value, io::Error> {
     let dir_path = base_path.join(dir_name);
@@ -486,7 +441,7 @@ fn read_optional_entities(base_path: &Path, dir_name: &str) -> Result<Value, io:
         return Ok(json!({}));
     }
 
-    let files_path = base_path.join(dir_name.clone()).join("**/*.schema.json");
+    let files_path = base_path.join(dir_name).join("**/*.schema.json");
     let glob_pattern = files_path.to_str().ok_or_else(|| {
         io::Error::new(ErrorKind::InvalidInput, "Failed to convert pattern to string")
     })?;
@@ -505,164 +460,4 @@ fn read_optional_entities(base_path: &Path, dir_name: &str) -> Result<Value, io:
             }).collect();
 
     Ok(Value::Object(schemas))
-}
-
-
-fn read_required_directory(base_path: &Path, dir_name: &str) -> Result<Vec<String>, io::Error> {
-    let dir_path = base_path.join(dir_name);
-    if !dir_path.exists() || !dir_path.is_dir() {
-        return Err(io::Error::new(io::ErrorKind::NotFound, format!("Directory {} not found", dir_name)));
-    }
-    let files = fs::read_dir(dir_path)?
-        .filter_map(|entry| entry.ok().map(|e| e.path().display().to_string()))
-        .collect();
-    Ok(files)
-}
-
-async fn validate_generator(generator_dir_path: PathBuf) {
-    debug!("Starting validation of {}",generator_dir_path.to_str().unwrap());
-    debug!("TODO!");
-    todo!()
-}
-
-async fn prepare_generator_source(uri: &str) -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let path = Path::new(uri);
-    if path.is_dir() {
-        debug!("Uri is local directory: {:?}", path.display());
-        Ok(Path::new(uri).to_path_buf())
-    } else {
-        let temp_dir = tempdir().unwrap().into_path();
-        debug!("Created temporary directory: {:?}", temp_dir);
-        if uri.starts_with("https://github.com") {
-            if uri.ends_with(".zip") || uri.ends_with(".tar.gz") {
-                info!("Detected GitHub directory URL that is not a repo, downloading specific directory...");
-                download_and_extract(uri, &temp_dir);
-            } else {
-                info!("Detected GitHub directory URL that is a repo, cloning repo...");
-                clone_git_repo(uri, &temp_dir)?;
-            }
-            Ok(temp_dir)
-        } else if uri.ends_with(".zip") || uri.ends_with(".tar.gz") {
-            info!("Detected URL, downloading file...");
-            download_and_extract(uri, &temp_dir);
-            Ok(temp_dir)
-        } else {
-            return Err("Unsupported URI format".into());
-        }
-    }
-}
-
-/// Downloads and extracts an archive (ZIP or TAR.GZ) from a URL.
-async fn download_and_extract(uri: &str, extract_to: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let response = reqwest::get(uri).await?;
-
-    let file_path = extract_to.join("download.zip");
-
-    let mut file = File::create(&file_path).await.unwrap();
-    let content = response.text().await.unwrap();
-    file.write_all(content.as_bytes());
-    let file = fs::File::open(file_path).unwrap();
-
-    if uri.ends_with(".zip") {
-        let mut zip = ZipArchive::new(file).unwrap();
-        zip.extract(extract_to)?;
-    } else if uri.ends_with(".tar.gz") {
-        let buffered_file = BufReader::new(file);
-        let tar_gz = GzDecoder::new(buffered_file);
-        let mut archive = Archive::new(tar_gz);
-        archive.unpack(extract_to)?;
-    } else {
-        return Err("Unsupported archive format".into());
-    }
-
-    Ok(())
-}
-
-/// Clones a Git repository to a temporary directory.
-fn clone_git_repo(repo_url: &str, clone_to: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    Repository::clone(repo_url, clone_to)?;
-    Ok(())
-}
-
-/// Copies a local file or folder to the temporary directory.
-fn copy_local_path(src: &str, dest: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let src_path = Path::new(src);
-
-    if src_path.is_dir() {
-        // Recursively copy the directory
-        fs::create_dir_all(dest)?;
-        for entry in fs::read_dir(src_path)? {
-            let entry = entry?;
-            let entry_path = entry.path();
-            let dest_path = dest.join(entry.file_name());
-
-            if entry_path.is_dir() {
-                fs::create_dir_all(&dest_path)?;
-                copy_local_path(entry_path.to_str().unwrap(), &dest_path)?;
-            } else {
-                fs::copy(&entry_path, &dest_path)?;
-            }
-        }
-    } else if src_path.is_file() {
-        // Copy the file
-        fs::copy(src_path, dest.join(src_path.file_name().unwrap()))?;
-    } else {
-        return Err("Invalid source path".into());
-    }
-
-    Ok(())
-}
-
-/// Moves the generator folder to the repository root after validation.
-async fn move_to_repo_root(temp_dir: PathBuf, repo_root: &PathBuf) -> Result<(), io::Error> {
-    let path = temp_dir.clone().join("Generator.yaml");
-    debug!("Path: {}", path.display());
-    let mut file = File::open(path.clone()).await.unwrap();
-
-    // Read the file contents asynchronously into a String
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).await?;
-
-    // Deserialize from the string contents
-    let generator: GeneratorYaml = serde_yaml::from_str(&contents)
-        .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData, "Failed to deserialize Generator.yaml"))?;
-
-    let generator_dir = Path::new(repo_root).join(generator.name.clone()).join(generator.version.clone());
-
-    info!("Installing generator with name:{}, version:{} to directory {}",generator.name.clone(),generator.version.clone(),generator_dir.display());
-    if !generator_dir.exists() {
-        create_dir_all(&generator_dir);
-    }
-
-    // use glob for installing templates
-    // for file in WalkDir::new(temp_dir.clone()).into_iter().filter_map(|file| file.ok()) {
-    //     if file.file_type().is_file() {
-    //         let source = file.clone().into_path();
-    //         let stripped_path = file.path().strip_prefix(temp_dir.clone());
-    //         let destination = generator_dir.clone().join(stripped_path.unwrap());
-    //         fs::create_dir_all(destination.parent().unwrap())?;
-    //         debug!("Copying file {} to {}", source.display(),destination.display());
-    //         copy(source, destination).await.unwrap();
-    //     }
-    // }
-    Ok(())
-}
-
-pub(crate) fn dereference_config(config: &mut Value, parent_path: &Path) {
-    // debug!("dereferencing config:{config}");
-    let entities = config.get_mut("entities").unwrap().as_object_mut().unwrap();
-
-    entities.values_mut().into_iter().for_each(|elem| {
-        let object = elem.as_object_mut().unwrap();
-        if object.contains_key("$ref") && object.get("$ref").unwrap().is_string() && object.len() == 1 {
-            let reference = object.get("$ref").unwrap().as_str().unwrap();
-            debug!("loading file from reference:{reference}");
-            let file_path = parent_path.join(reference);
-            if file_path.exists() {
-                *elem = path_to_json(&file_path).expect(format!("file {} doesnt exist or is an invalid JSON", file_path.display()).as_str());
-            } else {
-                error!("File {} does not exist",file_path.display());
-            }
-        }
-    });
 }

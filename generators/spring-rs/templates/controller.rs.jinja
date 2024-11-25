@@ -24,7 +24,7 @@ use super::utils::ListParams;
 pub struct ResponseModel {
     {% for name, property in entity.properties | items -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    {%- if macros.relation_is_many_to_many(property=property) or macros.relation_is_one_to_many(property=property)-%}
+    {%- if macros.get_m2m_relation(property)=property) or macros.relation_is_one_to_many(property=property)-%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
     pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}

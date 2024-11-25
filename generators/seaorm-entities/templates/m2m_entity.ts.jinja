@@ -1,8 +1,7 @@
 {# generate entities #}
 {% import "_macros.jinja" as macros -%}
 
-{% set relations = macros.get_m2m_relations(entities=entities) | split(",") -%}
-{% for relation in relations -%}
+{% for relation in macros.get_m2m_relations(entities)|split(',')  -%}
 {% set left = relation | split("_") | first %}
 {% set right = relation | split("_") | last %}
 {% set file_name = relation | snake_case %}

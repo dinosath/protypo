@@ -1,22 +1,16 @@
-mod generator;
-mod filters;
-mod files;
-
-use crate::generator::{install_template, Generator};
 use anyhow::{anyhow, Error};
 use clap::Parser;
 use clap_derive::Subcommand;
 use jsonptr::Pointer;
-use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::json;
 use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use tracing::{debug, error, info};
 use tracing_subscriber::EnvFilter;
+use protypo::{Generator};
 
-/// A fictional versioning CLI
 #[derive(Parser, Debug)]
 #[command(version, about="CLI application for downloading and running tera and rrgen templates", long_about = None)]
 struct Cli {
@@ -39,22 +33,6 @@ pub struct Dependency {
     repository: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Context {
-    values: Value,
-    entities: Value,
-}
-
-impl Default for Context {
-    fn default() -> Context {
-        Context{
-            values: json!({}),
-            entities: json!({}),
-        }
-    }
-}
-
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Generate {
     output: String,
@@ -69,11 +47,6 @@ impl Default for Generate {
 }
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// install template to local repo
-    Install {
-        /// uri of the template to install
-        url: String
-    },
     /// create a new template scaffold
     New {
         /// the name of the new template
@@ -110,19 +83,12 @@ async fn main() -> Result<(), Error> {
     let local_repo_generators = local_repo.join("generators");
     info!("directory for installing templates: {:?}!", local_repo_generators);
     match &cli.command {
-        Commands::Install { url } => {
-            info!("dir to install templates: {:?}!", local_repo_generators);
-            install_template(&url, &local_repo_generators);
-            Ok(())
-        },
         Commands::New { name } => {
             info!("Creating new template: {name}");
             create_new_template(name);
             Ok(())
         },
         Commands::Generate { name,version,uri, generator_path, sets} => {
-            let mut ctx = Context::default();
-
             let mut values = json!({});
             for set in sets {
                 let parts: Vec<&str> = set.splitn(2, '=').collect();
@@ -150,12 +116,6 @@ async fn main() -> Result<(), Error> {
                     debug!("Searching for generator in path: {} ", path.display());
                     path
                 }
-                true if uri.is_some() => {
-                    let uri = uri.clone().unwrap();
-                    debug!("Installing template from URI: {}", uri);
-                    install_template(&uri, &local_repo_generators).await;
-                    PathBuf::new()
-                }
                 _ => {
                     let error_message = "Error: Either generator name and version or a URI must be provided.";
                     error!(error_message);
@@ -163,25 +123,17 @@ async fn main() -> Result<(), Error> {
                 }
             };
             let generator = Generator::from_directory(path.as_path()).await?;
-            generator.copy_files(values)?;
             debug!("copied files");
-            let entities = generator.collect_entities();
-            ctx.entities = entities;
+            let ctx = json!({
+                "values": {},
+                "entities": {},
+            });
             generator.generate(&ctx)?;
 
             Ok(())
         },
 
     }
-}
-
-fn path_to_json(path: &PathBuf) -> Result<Value, Error> {
-    fs::read_to_string(path)
-        .map_err(|e| anyhow!("invalid config file path: {}", e)) // Handle file reading errors
-        .and_then(|content| {
-            serde_json::from_str(&content)
-                .map_err(|e| anyhow!("config file is an invalid JSON: {}", e)) // Handle JSON parsing errors
-        })
 }
 
 /// Function to create the new template package

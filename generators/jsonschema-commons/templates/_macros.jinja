@@ -166,30 +166,26 @@
 {%- endmacro -%}
 
 {%- macro relation_is_one_to_many(property) -%}
-{{ property['x-relationship'] and property['x-relationship']=="one-to-many"}}
+{{ 'x-relationship' in property and property['x-relationship']=="one-to-many"}}
 {%- endmacro -%}
 
 {%- macro relation_is_many_to_many(property) -%}
-{%- if type in property and property.type and property.type == "array" and property.items and 'x-relationship' in property.items and property.items['x-relationship'] == "many-to-many" -%}
+{%- filter trim -%}
+{%- if 'type' in property and property.type == "array" and 'items' in property and 'x-relationship' in property.items and property.items['x-relationship'] == "many-to-many" -%}
   {{ true }}
 {% else -%}
   {{ false }}
 {% endif -%}
+{%- endfilter -%}
 {%- endmacro -%}
 
 {%- macro is_relation(property) -%}
 {{ relation_is_many_to_one(property=property) or relation_is_one_to_many(property=property) or relation_is_many_to_many(property=property)  }}
 {%- endmacro -%}
 
-{%- macro get_m2m_relation(left,property) -%}
+{%- macro get_m2m_relation(property) -%}
 {%- filter trim -%}
-{% if relation_is_many_to_many(property=property) %}
-{% set right = get_relation(property=property) %}
-{% set relation_array = [] %}
-{% set relation_array = relation_array + [left] %}
-{% set relation_array = relation_array + [right] %}
-{{relation_array | sort | join("_")}}
-{% endif%}
+{{ property.items['$ref'] | split(".") | first }}
 {%- endfilter -%}
 {%- endmacro -%}
 
@@ -210,18 +206,19 @@
 {%- endmacro -%}
 
 {%- macro get_m2m_relations(entities) -%}
-{% set created_relations = [] %}
+{% set ns = namespace(m2m_relations=[]) %}
 {% for entity_name,entity in entities | items -%}
-    {% if entity.properties | items  %}
+    {% if entity.properties  %}
         {% for name,property in entity.properties | items  -%}
-            {% if relation_is_many_to_many(property=property) -%}
-                {% set relation = get_m2m_relation(left=entity.title, property=property) %}
-                {% set created_relations = created_relations + [relation] %}
-            {% endif %}
-        {% endfor %}
-    {% endif %}
+            {% if relation_is_many_to_many(property)=='true' -%}
+                {% set relation = get_m2m_relation(property) -%}
+                {% set m2m_relation = [entity.title|lower,relation|lower]|sort|join('_') -%}
+                {% set ns.m2m_relations = ns.m2m_relations + [m2m_relation] -%}
+            {% endif -%}
+        {% endfor -%}
+    {% endif -%}
 {% endfor -%}
-{{created_relations | unique | sort | join(",")}}
+{{ ns.m2m_relations | unique | join(',') }}
 {%- endmacro -%}
 
 {%- macro get_m21_relations(entity) -%}

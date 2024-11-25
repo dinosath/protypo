@@ -1,45 +1,19 @@
-[package]
-name = "protypo"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["protypo-*"]
+exclude = ["examples/README.md","output"]
+resolver = "2"
 
 [profile.release]
-opt-level = 3
-lto = "fat"
-panic = "abort"
-strip = "symbols"
+strip = true
 
-[dependencies]
-anyhow = "1.0"
-clap = { version = "4.5", features = ["derive"] }
-clap_derive = "4.5"
-cruet = "0.14.0"
-dirs = "5.0"
-git2 = "0.14"
-flate2 = "1.0"
-futures = "0.3"
-glob = "0.3"
-heck = "0.5.0"
-jsonptr = "0.6"
-jsonschema = "0.26"
-json_value_merge = "2.0"
-log = "0.4"
-reqwest = { version = "0.12", features = ["json", "gzip", "deflate", "stream","blocking"] }
-semver = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_yaml = "0.9"
-tar = "0.4"
-tempfile = "3.2"
-tokio = { version = "1", features = ["full"] }
-tokio-stream = { version = "0.1", features = ["full"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-url = { version = "2", features = ["serde"] }
-uuid = {version = "1.10",features = ["v4", "fast-rng", ] }
-zip = "0.6"
-minijinja = { version = "2.5.0", features = ["default","loop_controls"] }
-regex = "1"
-thiserror = "2.0.3"
-fs-err = "2.10.0"
-serde_regex = "1.1.0"
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+panic = "abort"
