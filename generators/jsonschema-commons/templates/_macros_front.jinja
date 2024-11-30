@@ -22,14 +22,14 @@
             NumberField
     {% elif property.enum %}
             TextField
-    {% elif macros.relation_is_one_to_many(property=property) or macros.relation_is_many_to_many(property=property)  -%}
-        {% set relation = macros.get_relation(property=property) | plural | snake_case -%}
+    {% elif macros.relation_is_one_to_many(property)=='true' or macros.relation_is_many_to_many(property)=='true' -%}
+        {% set relation = macros.get_relation(property) | plural | snake_case -%}
             TextField
-    {% elif macros.relation_is_many_to_one(property=property) -%}
-        {% set relation = macros.get_relation(property=property) -%}
+    {% elif macros.relation_is_many_to_one(property)=='true' -%}
+        {% set relation = macros.get_relation(property) -%}
             ReferenceField reference="{{ relation | plural | kebab_case }}" label="{{ relation | pascal_case }}"
-    {% elif macros.relation_is_many_to_many(property=property) -%}
-        {% set relation = macros.get_relation(property=property) -%}
+    {% elif macros.relation_is_many_to_many(property)=='true' -%}
+        {% set relation = macros.get_relation(property) -%}
         ReferenceArrayField reference="{{ relation | plural | kebab_case }}" label="{{ relation | pascal_case }}"
     {% else -%}
             TextField
@@ -69,9 +69,9 @@ readOnly
                { name: '{{ enum }}' }{%- if not loop.last -%},{% endif -%}
             {%- endfor -%}
             ]}
-    {% elif macros.relation_is_many_to_one(property=property) -%}
+    {% elif macros.relation_is_many_to_one(property)=='true' -%}
         ReferenceInput
-    {% elif macros.relation_is_many_to_many(property=property) -%}
+    {% elif macros.relation_is_many_to_many(property)=='true' -%}
         ReferenceArrayInput 
     {% else -%}
         TextInput
@@ -83,11 +83,11 @@ readOnly
 {%- macro get_all_properties_by_name(entity) -%}
 {%- set properties = [] -%}
 {% for name,property in entity.properties | items -%}
-    {% if macros.relation_is_one_to_many(property=property) or macros.relation_is_many_to_many(property=property)  -%}
+    {% if macros.relation_is_one_to_many(property)=='true' or macros.relation_is_many_to_many(property)=='true'  -%}
     {% continue -%}
     {% endif -%}
-    {% if macros.relation_is_many_to_one(property=property)  -%}
-    {% set relation = macros.get_relation(property=property) | camel_case | trim -%}
+    {% if macros.relation_is_many_to_one(property)=='true'  -%}
+    {% set relation = macros.get_relation(property) | camel_case | trim -%}
     {% set name = relation ~ " { id }" -%}
     {% endif -%}
     {%- set properties = properties | concat(name) -%}
@@ -98,10 +98,10 @@ readOnly
 {% macro get_all_properties_by_name(entity) %}
     {% set properties = [] %}
     {% for name, property in entity.properties | items %}
-        {% if macros.relation_is_one_to_many(property) or macros.relation_is_many_to_many(property) %}
+        {% if macros.relation_is_one_to_many(property)=='true' or macros.relation_is_many_to_many(property)=='true' %}
             {% continue %}
         {% endif %}
-        {% if macros.relation_is_many_to_one(property) %}
+        {% if macros.relation_is_many_to_one(property)=='true' %}
             {% set relation = get_relation(property) | camel_case | trim %}
             {% set name = relation ~ " { id }" %}
         {% endif %}
@@ -114,7 +114,7 @@ readOnly
 {%- macro source(name,property) -%}
 {% filter trim %}
 {{name|camel_case}}
-{%- if macros.relation_is_many_to_one(property=property) -%}
+{%- if macros.relation_is_many_to_one(property)=='true' -%}
 .id
 {%- endif -%}
 {%- endfilter -%}

@@ -13,7 +13,7 @@ strip = "symbols"
 futures = "0.3"
 glob = "0.3"
 json_value_merge = "2.0"
-reqwest = { version = "0.12", features = ["json", "gzip", "deflate", "stream","blocking"] }
+reqwest = { version = "0.12", features = ["json", "gzip", "deflate", "stream", "blocking"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
@@ -24,4 +24,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }
 zip = "2.2.1"
-rrgen = { path = "../../rrgen/rrgen",default-features = false, features = ["minijinja"] }
+rrgen = { git = "https://github.com/dinosath/rrgen", branch = "mini-jinja", default-features = false, features = ["minijinja"] }

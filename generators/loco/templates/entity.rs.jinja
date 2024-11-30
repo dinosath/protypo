@@ -42,9 +42,9 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
     {%- for name, property in entity.properties -%}
-    {% if relation_is_many_to_many(property=property)=='true' or relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+    {% if relation_is_many_to_many(property)=='true' or relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
     {{ validations(name=name,property=property) }}
-    pub {{ name | snake_case }}{% if relation_is_many_to_one(property=property)=='true' and get_relation(property=property) | snake_case == name | snake_case -%}_id{% endif -%}: {{ get_type_with_option(name=name, property=property, required_fields=entity.required) }}{%- if not loop.last -%},{% endif -%}
+    pub {{ name | snake_case }}{% if relation_is_many_to_one(property=property)=='true' and get_relation(property) | snake_case == name | snake_case -%}_id{% endif -%}: {{ get_type_with_option(name=name, property=property, required_fields=entity.required) }}{%- if not loop.last -%},{% endif -%}
     {% endfor %}
 }
 
@@ -52,20 +52,20 @@ pub struct Model {
 pub enum Relation {
 {% for name,property in entity.properties -%}
     {% if relation_is_one_to_many(property=property)=='true' -%}
-        {% set relation = get_relation(property=property) | snake_case -%}
+        {% set relation = get_relation(property) | snake_case -%}
     #[sea_orm(has_many = "crate::models::entities::{{ relation }}::Entity")]
     {{ name | pascal_case }},
 
     {%- elif relation_is_many_to_one(property=property)=='true' -%}
-        {% set relation = get_relation(property=property) | snake_case -%}
+        {% set relation = get_relation(property) | snake_case -%}
     #[sea_orm(belongs_to = "crate::models::entities::{{ relation }}::Entity",
     from = "Column::{{ name | pascal_case }}{% if relation==name | snake_case -%}Id{% endif -%}",
     to = "crate::models::entities::{{ relation }}::Column::Id")]
     {{ name | pascal_case }},
 
     
-    {% elif relation_is_many_to_many(property=property)=='true'-%}
-    {% set relation = get_m2m_relation(left=entity.title, property=property) | snake_case-%}
+    {% elif relation_is_many_to_many(property)=='true'-%}
+    {% set relation = get_m2m_relation(property) | snake_case-%}
     #[sea_orm(has_many = "crate::models::entities::{{ relation }}::Entity")]
     {{ relation | pascal_case }},
     {% endif -%}
@@ -74,12 +74,12 @@ pub enum Relation {
 
 {% set implemented_relations = [] -%}
 {% for name,property in entity.properties -%}
-    {%- set relation = get_relation(property=property) | snake_case -%}
+    {%- set relation = get_relation(property) | snake_case -%}
     {%- if is_relation(property=property)=='true' and relation not in implemented_relations-%}
         {%- set implemented_relations = implemented_relations | concat(relation)  -%}
-        {%- if relation_is_many_to_many(property=property)=='true'-%}
+        {%- if relation_is_many_to_many(property)=='true'-%}
 impl Related<crate::models::entities::{{ relation }}::Entity> for Entity {
-    {% set relation = get_m2m_relation(left=entity.title, property=property) -%}
+    {% set relation = get_m2m_relation(property) -%}
     fn to() -> RelationDef {
         crate::models::entities::{{ relation | snake_case }}::Relation::{{ relation | split("_") | first | pascal_case}}.def()
     }

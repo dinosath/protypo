@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TodoItem",
+  "type": "object",
+  "order": 2,
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 150,
+      "x-unique": true
+    },
+    "checked": {
+      "type": "boolean"
+    },
+    "list": {
+      "$ref": "TodoList.json",
+      "x-relationship": "many-to-one"
+    }
+  },
+  "required": [
+    "title",
+    "checked"
+  ]
+}

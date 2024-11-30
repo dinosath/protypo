@@ -1,11 +1,11 @@
 {%- import "_macros_front.jinja" as macros -%}
 {%- import "_macros.jinja" as core -%}
-{% set is_relation = core.relation_is_many_to_many(property=property)=='true' or core.relation_is_many_to_one(property=property)=='true' %}
+{% set is_relation = core.relation_is_many_to_many(property)=='true' or core.relation_is_many_to_one(property=property)=='true' %}
             <{{ macros.get_input_field(property=property) }} {{ macros.is_read_only(property=property) }} source="{{ macros.source(name=name,property=property)}}"
 {%- if is_relation %}{{' '}}
-{%- set relation = macros.get_relation(property=property) -%}
+{%- set relation = core.get_relation(property) -%}
 reference="{{ relation | plural | kebab_case }}" label="{{ relation | pascal_case }}">
-                <AutocompleteInput label="{{ name }}" {{ validation(entity=entity,name=name,property=property) }}/>
+                <AutocompleteInput label="{{ name }}" {{ macros.validation(entity,name,property) }}/>
             </{{ macros.get_input_field(property=property) }}>
 {% else -%}
 {{' '}}{{ macros.validation(entity=entity,name=name,property=property) }}/>

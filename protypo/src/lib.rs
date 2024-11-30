@@ -441,7 +441,7 @@ fn read_optional_entities(base_path: &Path, dir_name: &str) -> Result<Value, io:
         return Ok(json!({}));
     }
 
-    let files_path = base_path.join(dir_name).join("**/*.schema.json");
+    let files_path = base_path.join(dir_name).join("**/*.json");
     let glob_pattern = files_path.to_str().ok_or_else(|| {
         io::Error::new(ErrorKind::InvalidInput, "Failed to convert pattern to string")
     })?;

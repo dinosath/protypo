@@ -24,7 +24,7 @@ use super::utils::ListParams;
 pub struct ResponseModel {
     {% for name, property in entity.properties | items -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    {%- if macros.get_m2m_relation(property)=property) or macros.relation_is_one_to_many(property=property)-%}
+    {%- if macros.get_m2m_relation(property) or macros.relation_is_one_to_many(property)=='true' -%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
     pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
@@ -38,7 +38,7 @@ pub struct ResponseModel {
 pub struct Params {
     {% for name, property in entity.properties | items -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
-    {%- if macros.relation_is_many_to_many(property=property) -%}
+    {%- if macros.relation_is_many_to_many(property)=='true' -%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
     pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
@@ -49,7 +49,7 @@ pub struct Params {
 impl Params {
     fn update(&self, item: &mut ActiveModel) {
       {% for name, property in entity.properties | items -%}
-        {%- if property.readOnly or macros.relation_is_many_to_many(property=property) -%}{% continue -%}{%- endif -%}
+        {%- if property.readOnly or macros.relation_is_many_to_many(property)=='true' -%}{% continue -%}{%- endif -%}
         {%- if property.type  -%}
       item.{{ name | snake_case }} = Set(self.{{ name | snake_case }}.clone());
         {% endif -%}
@@ -62,7 +62,7 @@ async fn load_item(db: &DbConn, id: i32) -> std::result::Result<Model, Error> {
     item.ok_or_else(|| anyhow!("Entity not found"))
 }
 
-#[get("/{{ entity.title | plural | kebab_case  }}")]
+#[get("/api/{{ entity.title | plural | kebab_case  }}")]
 pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
     let ids = params.ids.unwrap_or_default();
 
@@ -76,7 +76,7 @@ pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListPar
 }
 
 
-#[post("/{{ entity.title | plural | kebab_case  }}")]
+#[post("/api/{{ entity.title | plural | kebab_case  }}")]
 pub async fn add(Component(db): Component<DbConn>, Json(params): Json<Params>) -> Result<impl IntoResponse> {
     let mut item = ActiveModel {
         ..Default::default()
@@ -86,7 +86,7 @@ pub async fn add(Component(db): Component<DbConn>, Json(params): Json<Params>) -
     Ok(Json(item))
 }
 
-#[put("/{{ entity.title | plural | kebab_case  }}/:id")]
+#[put("/api/{{ entity.title | plural | kebab_case  }}/:id")]
 pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<impl IntoResponse> {
     let item = load_item(&db, id).await?;
     let mut item = item.into_active_model();
@@ -95,14 +95,14 @@ pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(
     Ok(Json(item))
 }
 
-#[delete("/{{ entity.title | plural | kebab_case  }}/:id")]
+#[delete("/api/{{ entity.title | plural | kebab_case  }}/:id")]
 pub async fn remove(Component(db): Component<DbConn>, Path(id): Path<i32>) -> Result<impl IntoResponse> {
     let item = load_item(&db, id).await?;
     item.delete(&db).await.context("failed to delete item")?;
     Ok(Json(()))
 }
 
-#[get("/{{ entity.title | plural | kebab_case  }}/:id")]
+#[get("/api/{{ entity.title | plural | kebab_case  }}/:id")]
 pub async fn get_one(Component(db): Component<DbConn>, Path(id): Path<i32>,) -> Result<impl IntoResponse> {
     let item = load_item(&db, id).await.context("failed to delete item")?;
     Ok(Json(item))

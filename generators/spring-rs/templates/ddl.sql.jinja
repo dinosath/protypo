@@ -1,0 +1,80 @@
+to: {{ values.outputFolder }}/sql/ddl.sql
+message: "Sql file `ddl.sql` was added successfully."
+---
+{% import "_macros.jinja" as macros %}
+{%- macro get_sql_type(name, property, required) -%}{% filter trim -%}
+    {# Define a complex map for SQL types with type, format, min, and max #}
+    {%- set sql_map = [
+        {"type": "string", "format": "uuid", "result": "UUID"},
+        {"type": "string", "format": "date-time", "result": "TIMESTAMPTZ"},
+        {"type": "string", "format": "date", "result": "DATE"},
+        {"type": "string", "format": "time", "result": "TIME"},
+        {"type": "string", "result": "VARCHAR"},
+        {"type": "boolean", "result": "BOOLEAN"},
+        {"type": "integer", "min": 0, "max": 255, "result": "TINYINT UNSIGNED"},
+        {"type": "integer", "min": 0, "max": 65535, "result": "SMALLINT UNSIGNED"},
+        {"type": "integer", "min": 0, "max": 4294967295, "result": "INT UNSIGNED"},
+        {"type": "integer", "min": 0, "max": None, "result": "BIGINT UNSIGNED"},
+        {"type": "integer", "min": None, "max": 127, "result": "TINYINT"},
+        {"type": "integer", "min": None, "max": 32767, "result": "SMALLINT"},
+        {"type": "integer", "min": None, "max": 2147483647, "result": "INT"},
+        {"type": "integer", "min": None, "max": None, "result": "BIGINT"},
+        {"type": "number", "min": -3.40282347, "max": 3.40282347, "result": "FLOAT"},
+        {"type": "number", "min": None, "max": None, "result": "DOUBLE"},
+        {"type": "enum", "format": None, "result": "ENUM"},
+        {"type": "relationship", "format": None, "result": "BIGINT UNSIGNED"},
+        {"x-relationship": "many-to-one", "result": "INTEGER"}
+    ] -%}
+
+
+    {%- set found = None -%}
+    {%- for entry in sql_map -%}
+        {% set condition = property.type == entry.type and entry.format == property.format
+                                       and (min not in entry or (property.minimum or property.exclusiveMinimum) >= entry.min)
+                                       and (max not in entry or (property.maximum or property.exclusiveMaximum) <= entry.max)
+                                       and entry['x-relationship'] == property['x-relationship']
+                                       %}
+        {%- if condition -%}
+            {{ entry.result }}
+            {%- break -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- if required %} NOT NULL{%- endif -%}
+{%- endfilter %}{%- endmacro -%}
+
+{%- macro get_reference(name, property) -%}{% filter trim -%}
+{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ macros.get_relation(property) | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
+{%- endfilter %}{%- endmacro -%}
+
+{# generate controllers #}
+{% import "_macros.jinja" as macros -%}
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+{% for entity_name,entity in entities | items | sort(attribute="1.order")-%}
+{% if entity.properties -%}
+{% set table_name = entity.title | snake_case -%}
+DROP TABLE IF EXISTS {{ table_name }};
+
+CREATE TABLE {{ table_name }}(
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    {% for name, property in entity.properties | items -%}
+    {% set type = get_sql_type(name,property,name in entity.required) -%}
+    {{name}} {{ type }}{{ get_reference(name,property) }}{{ ',' if not loop.last }}
+    {% endfor -%}
+);
+
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON {{ table_name }}
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+{% endif -%}
+{% endfor -%}

@@ -1,4 +1,5 @@
 use spring::{auto_config, App};
+use spring_sea_orm::{SeaOrmPlugin,};
 use spring_web::{WebConfigurator, WebPlugin};
 mod models;
 mod controllers;
@@ -7,6 +8,7 @@ mod controllers;
 #[tokio::main]
 async fn main() {
     App::new()
+        .add_plugin(SeaOrmPlugin)
         .add_plugin(WebPlugin)
         .run()
         .await

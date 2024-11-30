@@ -1,3 +1,16 @@
+{% macro map_to_name_and_relation(name_and_property) -%}
+    {% set name = name_and_property[0] -%}
+    {% set property = name_and_property[1] -%}
+    {% set relation = get_relation(property) -%}
+    {% set relation_type = get_relation_type(property) -%}
+
+    {
+        "name": name,
+        "relation": relation,
+        "x-relationship": relation_type
+    }
+{% endmacro %}
+
 {%- macro get_migration_type(name, property, required) -%}
 {% filter trim -%}
     {% if property.type and property.type == "string" -%}
@@ -138,16 +151,24 @@
 {%- macro get_type_with_option(name, property, required_fields) -%}
 {% set required = required_fields and name and name in required_fields -%}
 {% if not required -%}Option<{% endif -%}
-{{get_type(name=name,property=property)}}
+{{ get_type(name,property) }}
 {%- if not required -%}>{% endif -%}
 {%- endmacro -%}
 
-{%- macro get_relation(property) -%}
+{%- macro get_relation(property) -%}{%- filter trim -%}
+{% if relation_is_many_to_many(property)=='true' -%}
+{{ property['items']['$ref'] | split(".") | first }}
+{% elif relation_is_many_to_one(property)=='true' or relation_is_one_to_many(property)=='true' -%}
+{{ property['$ref'] | split(".")|first }}
+{%- endif -%}
+{%- endfilter -%}{%- endmacro -%}
+
+{%- macro get_relation_type(property) -%}
 {%- filter trim -%}
-    {% if property['$ref'] -%}
-    {{ property['$ref'] | split(".")|first }}
-    {% elif relation_is_many_to_many(property=property) and items in property -%}
-    {{ property['items']['$ref'] | split(".") | first }}
+    {% if relation_is_many_to_many(property)=='true' -%}
+    {{ property['items']['x-relationship'] }}
+    {% elif relation_is_many_to_one(property)=='true' or relation_is_one_to_many(property)=='true' -%}
+    {{ property['x-relationship'] }}
     {%- endif -%}
 {%- endfilter -%}
 {%- endmacro -%}
@@ -158,11 +179,7 @@
 
 
 {%- macro relation_is_many_to_one(property) -%}
-{%- if 'x-relationship' in property and property['x-relationship']=="many-to-one" -%}
-  {{ true }}
-{% else -%}
-  {{ false }}
-{% endif -%}
+{{ 'x-relationship' in property and property['x-relationship']=="many-to-one" }}
 {%- endmacro -%}
 
 {%- macro relation_is_one_to_many(property) -%}
@@ -180,24 +197,30 @@
 {%- endmacro -%}
 
 {%- macro is_relation(property) -%}
-{{ relation_is_many_to_one(property=property) or relation_is_one_to_many(property=property) or relation_is_many_to_many(property=property)  }}
+{{ relation_is_many_to_one(property)=='true' or relation_is_one_to_many(property)=='true' or relation_is_many_to_many(property)=='true'  }}
 {%- endmacro -%}
 
-{%- macro get_m2m_relation(property) -%}
-{%- filter trim -%}
+{%- macro get_m2m_relation(property) -%}{%- filter trim -%}
+{% if relation_is_many_to_many(property)=='true' -%}
 {{ property.items['$ref'] | split(".") | first }}
-{%- endfilter -%}
-{%- endmacro -%}
+{%- endif -%}
+{%- endfilter -%}{%- endmacro -%}
+
+{%- macro get_m2m_relation_model(name,property) -%}{%- filter trim -%}
+{% if relation_is_many_to_many(property)=='true' -%}
+{{ [ name | lower, get_relation(property) | lower ] | sort | join('_') }}
+{%- endif -%}
+{%- endfilter -%}{%- endmacro -%}
 
 {%- macro get_all_relations(entity) -%}
 {% set created_relations = [] -%}
 {% if entity.properties | items  -%}
     {% for name,property in entity.properties | items  -%}
-        {% if relation_is_many_to_many(property=property) -%}
-            {% set relation = get_m2m_relation(left=entity.title, property=property) | trim -%}
+        {% if relation_is_many_to_many(property)=='true' -%}
+            {% set relation = get_m2m_relation(property) | trim -%}
             {% set created_relations = created_relations | concat(relation) -%}
         {% elif is_relation(property=property) -%}
-            {% set relation = get_relation(property=property) | trim -%}
+            {% set relation = get_relation(property) | trim -%}
             {% set created_relations = created_relations | concat(relation) -%}
         {% endif -%}
     {% endfor -%}
@@ -210,8 +233,8 @@
 {% for entity_name,entity in entities | items -%}
     {% if entity.properties  %}
         {% for name,property in entity.properties | items  -%}
-            {% if relation_is_many_to_many(property)=='true' -%}
-                {% set relation = get_m2m_relation(property) -%}
+            {% set relation = get_m2m_relation(property) -%}
+            {% if relation!='' -%}
                 {% set m2m_relation = [entity.title|lower,relation|lower]|sort|join('_') -%}
                 {% set ns.m2m_relations = ns.m2m_relations + [m2m_relation] -%}
             {% endif -%}
@@ -226,7 +249,7 @@
 {% if entity.properties | items  -%}
     {% for name,property in entity.properties | items  -%}
         {% if relation_is_many_to_one(property=property) -%}
-            {% set relation = get_relation(left=entity.title, property=property) | trim -%}
+            {% set relation = get_relation(property) | trim -%}
             {% set created_relations = created_relations | concat(relation) -%}
         {% endif -%}
     {% endfor -%}
@@ -249,7 +272,7 @@
 {%- macro has_many_to_many_relation(entity) -%}
 {%- set has_many_to_many_relation = false -%}
 {% for name,property in entity.properties | items  -%}
-    {% if relation_is_many_to_many(property=property) -%}
+    {% if relation_is_many_to_many(property)=='true' -%}
         {%- set has_many_to_many_relation = true -%}
         {% break -%}
     {% endif -%}
@@ -271,7 +294,7 @@
 {%- macro enum_imports(entity) -%}
 {%- for name,property in entity.properties | items -%}
     {%- if property['$ref'] and not property['x-relationship'] -%}
-        {%- set type = get_type(name=name,property=property) | snake_case-%}
+        {%- set type = get_type(name,property) | snake_case-%}
         {%- set type_pascal = type | pascal_case -%}
         {{ "use crate::models::enums::" ~ type ~ "::{" ~ type_pascal ~ "};" }}
     {%- endif -%}
@@ -279,11 +302,9 @@
 {%- endmacro -%}
 
 {%- macro seaorm_prelude_imports(entity) -%}
-{%- set possible_imports = ['DateTimeWithTimeZone','TimeDate','TimeTime'] -%}
+{%- set possible_imports = ['TimeDate','TimeTime'] -%}
 {%- set imports = entity.properties | items | map(attribute='type') | select("in", possible_imports) -%}
-{%- if imports | length > 0 -%}
-    {{ "use sea_orm::prelude::{" ~ use_imports | join(",") ~ "};"}}
-{%- endif -%}
+{{ "use sea_orm::prelude::{DateTimeWithTimeZone, " ~ use_imports | join(",") ~ "};"}}
 {%- endmacro -%}
 
 {% macro get_m21_relations_type(entity) -%}
@@ -291,7 +312,7 @@
 {% if entity.properties | items  -%}
 {% for name, property in entity.properties | items  -%}
 {% if relation_is_many_to_one(property=property) -%}
-{% set relation = get_relation(property=property) -%}
+{% set relation = get_relation(property) -%}
 {% set relations = relations | concat(relation) -%}
 {% endif -%}
 {% endfor -%}
@@ -301,7 +322,7 @@
 
 {% macro m21_relation_equal_name(name,property) -%}
 {% filter trim -%}
-{{ relation_is_many_to_one(property=property) and  get_relation(property=property)|snake_case==name|snake_case }}
+{{ relation_is_many_to_one(property=property) and  get_relation(property)|snake_case==name|snake_case }}
 {% endfilter -%}
 {% endmacro -%}
 

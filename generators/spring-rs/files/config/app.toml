@@ -9,9 +9,14 @@ catch_panic = { enable = true }
 timeout_request = { enable = true, timeout = 30000 }
 static = { enable = true, uri = "/", path = "static", precompressed = true, fallback = "index.html" }
 
-[sqlx]
-uri = "postgres://postgres:xudjf23adj213@127.0.0.1:5432"
-min_connections = 10
+[sea-orm]
+uri = "${DATABASE_URL:postgres://postgres:xudjf23adj213@localhost:5432}"
+enable_logging = true
+
+[sea-orm-web]
+one_indexed = true
+max_page_size = 100
+default_page_size = 10
 
 [logger]
 pretty_backtrace = true

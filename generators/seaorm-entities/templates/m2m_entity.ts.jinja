@@ -1,9 +1,9 @@
 {# generate entities #}
 {% import "_macros.jinja" as macros -%}
-
 {% for relation in macros.get_m2m_relations(entities)|split(',')  -%}
-{% set left = relation | split("_") | first %}
-{% set right = relation | split("_") | last %}
+{% if relation|trim=='' -%}{% continue -%}{% endif -%}
+{% set left = relation | split("_") | first -%}
+{% set right = relation | split("_") | last -%}
 {% set file_name = relation | snake_case %}
 ---
 to: {{ values.outputFolder }}/src/models/{{ file_name }}.rs
