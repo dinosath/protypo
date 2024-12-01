@@ -1,8 +1,11 @@
+application:
+  name: app
+
+features:
+  - graphql
+
 spring-rs:
-  application:
-    name: app
   outputFolder: "./output"
+
 react-admin:
-  application:
-    name: app
   outputFolder: "./output/frontend"
