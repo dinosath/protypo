@@ -8,15 +8,21 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
+[profile.release]
+opt-level = 3
+lto = "fat"
+panic = "abort"
+strip = "symbols"
+
 [dependencies]
 anyhow = "1.0"
 chrono = "0.4"
 sea-orm = "1.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-spring = "0.2.9"
-spring-opentelemetry = "0.2.1"
-spring-sea-orm = { version = "0.2.3", features = ["postgres","with-web",] }
-spring-web = "0.2.4"
+spring = "0.3.0"
+spring-opentelemetry = "0.3.0"
+spring-sea-orm = { version = "0.3.0", features = ["postgres","with-web",] }
+spring-web = "0.3.0"
 tokio = { version = "1.39" }
 uuid = { version = "1.10", features = ["v4"] }

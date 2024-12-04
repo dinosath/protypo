@@ -99,7 +99,6 @@ impl Related<crate::models::{{ relation | snake_case }}::Entity> for Entity {
     {%- endif -%}
 {%- endfor %}
 
-features:{{ features }}
 {% if features and 'graphql' in features -%}
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
 pub enum RelatedEntity {

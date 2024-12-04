@@ -26,6 +26,6 @@ WORKDIR /usr/app
 COPY --from=builder /usr/src/assets/static /usr/app/assets/static
 COPY --from=builder /usr/src/assets/static/404.html /usr/app/assets/static/404.html
 COPY --from=builder /usr/src/config /usr/app/config
-COPY --from=builder /usr/src/target/release/{{ values.application.name }}-cli /usr/app/{{ values.application.name }}-cli
+COPY --from=builder /usr/src/target/release/{{ values.application.name }} /usr/app/{{ values.application.name }}
 
-ENTRYPOINT ["/usr/app/{{ values.application.name }}-cli"]
+ENTRYPOINT ["/usr/app/{{ values.application.name }}"]
