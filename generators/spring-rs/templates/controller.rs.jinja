@@ -9,6 +9,10 @@
 ---
 to: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
 message: "Controller `{{module_name}}` was added successfully."
+injections:
+- into: {{ values.outputFolder }}/src/controllers/mod.rs
+  append: true
+  content: "pub mod {{ file_name }};"
 ---
 use anyhow::{anyhow, Error, Context};
 use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},error::Result,extractor::{Component, Path, Query},};
