@@ -44,7 +44,7 @@ pub struct Params {
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
     {%- if macros.relation_is_many_to_many(property)=='true' -%}
     pub {{ name | snake_case }}:Vec<i32>,
-    {% elif property.type -%}
+    {% else -%}
     pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endif -%}
     {% endfor %}
@@ -53,8 +53,8 @@ pub struct Params {
 impl Params {
     fn update(&self, item: &mut ActiveModel) {
       {% for name, property in entity.properties | items -%}
-        {%- if property.readOnly or macros.relation_is_many_to_many(property)=='true' -%}{% continue -%}{%- endif -%}
-        {%- if property.type  -%}
+        {%- if property.readOnly or macros.relation_is_many_to_many(property)=='true' -%}{% continue -%}
+        {%- else -%}
       item.{{ name | snake_case }} = Set(self.{{ name | snake_case }}.clone());
         {% endif -%}
       {%- endfor -%}
