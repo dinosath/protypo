@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "TodoItem",
+  "title": "item",
   "type": "object",
   "order": 2,
   "properties": {
@@ -13,8 +13,15 @@
       "type": "boolean"
     },
     "list": {
-      "$ref": "TodoList.json",
+      "$ref": "list.json",
       "x-relationship": "many-to-one"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "$ref": "tag.json"
+      },
+      "x-relationship": "many-to-many"
     }
   },
   "required": [

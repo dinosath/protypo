@@ -42,10 +42,7 @@ pub struct Model {
     {%- for name, property in entity.properties | items -%}
     {% if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}{% continue -%}{% endif -%}
     {{ macros.validations(name=name,property=property) }}
-    pub {{ name | snake_case }}
-    {%- if macros.relation_is_many_to_one(property)=='true' and macros.get_relation(property) | snake_case == name | snake_case -%}
-    _id
-    {%- endif -%}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }}
+    pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }}
 
     {%- if not loop.last -%},{% endif -%}
     {% endfor %}
@@ -58,7 +55,7 @@ pub enum Relation {
     {% if relation != '' -%}
     {% if macros.relation_is_many_to_one(property)=='true' -%}
         #[sea_orm(belongs_to = "crate::models::{{ relation }}::Entity",
-        from = "Column::{{ name | pascal_case }}{% if relation==name | snake_case -%}Id{% endif -%}",
+        from = "Column::{{ name | pascal_case }}",
         to = "crate::models::{{ relation }}::Column::Id")]
     {% else -%}
     #[sea_orm(has_many = "crate::models::{{ relation }}::Entity")]
