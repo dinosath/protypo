@@ -6,7 +6,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=xudjf23adj213
     volumes:
-      - ./sql:/docker-entrypoint-initdb.d
+      - ./migrations:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
   jaeger:
