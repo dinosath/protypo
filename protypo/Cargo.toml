@@ -18,10 +18,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
 tempfile = "3.10"
-tokio = { version = "1", features = ["full"] }
-tokio-stream = { version = "0.1", features = ["full"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = { version = "2", features = ["serde"] }
 zip = "2.2.1"
 rrgen = { git = "https://github.com/dinosath/rrgen", branch = "mini-jinja", default-features = false, features = ["minijinja"] }

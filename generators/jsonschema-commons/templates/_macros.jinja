@@ -188,7 +188,7 @@
 
 {%- macro relation_is_many_to_many(property) -%}
 {%- filter trim -%}
-{%- if 'type' in property and property.type == "array" and 'items' in property and 'x-relationship' in property.items and property.items['x-relationship'] == "many-to-many" -%}
+{%- if 'type' in property and property.type == "array" and 'items' in property and 'x-relationship' in property and '$ref' in property.items and property['x-relationship'] == "many-to-many" -%}
   {{ true }}
 {% else -%}
   {{ false }}

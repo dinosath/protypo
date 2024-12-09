@@ -1,5 +1,5 @@
-to: {{ values.outputFolder }}/sql/ddl.sql
-message: "Sql file `ddl.sql` was added successfully."
+to: {{ values.outputFolder }}/migrations/01_create_entities.sql
+message: "Sql file `01_create_entities` was added successfully."
 ---
 {% import "_macros.jinja" as macros %}
 {%- macro get_sql_type(name, property, required) -%}{% filter trim -%}
@@ -67,6 +67,7 @@ CREATE TABLE {{ table_name }}(
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     {% for name, property in entity.properties | items -%}
+    {% if macros.relation_is_many_to_many(property)=='true' -%}{% continue -%}{% endif -%}
     {% set type = get_sql_type(name,property,name in entity.required) -%}
     {{name}} {{ type }}{{ get_reference(name,property) }}{{ ',' if not loop.last }}
     {% endfor -%}
@@ -77,4 +78,15 @@ BEFORE UPDATE ON {{ table_name }}
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 {% endif -%}
+{% endfor -%}
+
+
+{% for relation in macros.get_m2m_relations(entities) | split(',')  -%}
+{% set left = relation | trim | split("_") | first -%}
+{% set right = relation | trim | split("_") | last -%}
+CREATE TABLE {{ relation | trim }}(
+    id SERIAL PRIMARY KEY,
+    {{ left }}_id INTEGER, FOREIGN KEY( {{ left }}_id ) REFERENCES {{ left }}(id),
+    {{ right }}_id INTEGER, FOREIGN KEY( {{ right }}_id ) REFERENCES {{ right }}(id)
+);
 {% endfor -%}
