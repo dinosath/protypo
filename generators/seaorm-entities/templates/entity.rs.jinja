@@ -39,11 +39,14 @@ pub struct Model {
     pub id: i32,
     pub created_at: DateTimeWithTimeZone,
     pub updated_at: DateTimeWithTimeZone,
-    {%- for name, property in entity.properties | items -%}
-    {% if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}{% continue -%}{% endif -%}
+    {% for name, property in entity.properties | items -%}
+    {% if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}
+    #[sea_orm(ignore)]
+    pub {{ name | snake_case }}: Vec<i32>
+    {%- else -%}
     {{ macros.validations(name=name,property=property) }}
     pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }}
-
+    {%- endif -%}
     {%- if not loop.last -%},{% endif -%}
     {% endfor %}
 }
@@ -54,11 +57,11 @@ pub enum Relation {
     {% set relation = macros.get_relation(property) | snake_case -%}
     {% if relation != '' -%}
     {% if macros.relation_is_many_to_one(property)=='true' -%}
-        #[sea_orm(belongs_to = "crate::models::{{ relation }}::Entity",
+        #[sea_orm(belongs_to = "super::{{ relation }}::Entity",
         from = "Column::{{ name | pascal_case }}",
-        to = "crate::models::{{ relation }}::Column::Id")]
+        to = "super::{{ relation }}::Column::Id")]
     {% else -%}
-    #[sea_orm(has_many = "crate::models::{{ relation }}::Entity")]
+    #[sea_orm(has_many = "super::{{ relation }}::Entity")]
     {% endif -%}
     {% if macros.relation_is_many_to_many(property)=='true' -%}
         {{ relation | pascal_case }},
@@ -77,17 +80,17 @@ pub enum Relation {
     {% set implemented_relations = ns.implemented_relations + [relation]  -%}
     {% if macros.relation_is_many_to_many(property)=='true'-%}
     {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
-impl Related<crate::models::{{ relation }}::Entity> for Entity {
+impl Related<super::{{ relation }}::Entity> for Entity {
     fn to() -> RelationDef {
-        crate::models::{{ m2m_relation_model }}::Relation::{{ relation | pascal_case }}.def()
+        super::{{ m2m_relation_model }}::Relation::{{ relation | pascal_case }}.def()
     }
 
     fn via() -> Option<RelationDef> {
-        Some(crate::models::{{ m2m_relation_model }}::Relation::{{ entity.title | pascal_case }}.def().rev())
+        Some(super::{{ m2m_relation_model }}::Relation::{{ entity.title | pascal_case }}.def().rev())
     }
 }
         {% else -%}
-impl Related<crate::models::{{ relation | snake_case }}::Entity> for Entity {
+impl Related<super::{{ relation | snake_case }}::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::{{ name | pascal_case }}.def()
     }
@@ -99,10 +102,10 @@ impl Related<crate::models::{{ relation | snake_case }}::Entity> for Entity {
 {% if features and 'graphql' in features -%}
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
 pub enum RelatedEntity {
-    {% set relations = get_all_relations(entity=entity) | trim -%}
+    {% set relations = get_all_relations(entity) | trim -%}
     {% if relations !="" -%}
     {% for relation in relations | split(",") -%}
-    #[sea_orm(entity = "crate::models::{{ relation | snake_case }}::Entity")]
+    #[sea_orm(entity = "super::{{ relation | snake_case }}::Entity")]
     {{ relation | pascal_case }}{%- if not loop.last -%},{% endif -%}
     {% endfor -%}
     {% endif -%}

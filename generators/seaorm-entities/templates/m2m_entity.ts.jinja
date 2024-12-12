@@ -28,30 +28,30 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "crate::models::{{ left | snake_case }}::Entity",
+        belongs_to = "super::{{ left | snake_case }}::Entity",
         from = "Column::{{ left | pascal_case }}Id",
-        to = "crate::models::{{ left | snake_case }}::Column::Id",
+        to = "super::{{ left | snake_case }}::Column::Id",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
     {{ left | pascal_case }},
     #[sea_orm(
-        belongs_to = "crate::models::{{ right | snake_case }}::Entity",
+        belongs_to = "super::{{ right | snake_case }}::Entity",
         from = "Column::{{ right | pascal_case }}Id",
-        to = "crate::models::{{ right | snake_case }}::Column::Id",
+        to = "super::{{ right | snake_case }}::Column::Id",
         on_update = "Cascade",
         on_delete = "Cascade"
     )]
     {{ right | pascal_case }},
 }
 
-impl Related<crate::models::{{ left | snake_case }}::Entity> for Entity {
+impl Related<super::{{ left | snake_case }}::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::{{ left | pascal_case }}.def()
     }
 }
 
-impl Related<crate::models::{{ right | snake_case }}::Entity> for Entity {
+impl Related<super::{{ right | snake_case }}::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::{{ right | pascal_case }}.def()
     }

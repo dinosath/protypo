@@ -17,6 +17,13 @@
                 "$ref": "tag.json"
             },
             "x-relationship": "many-to-many"
+        },
+        "customers": {
+            "type": "array",
+            "items": {
+                "$ref": "customer.json"
+            },
+            "x-relationship": "many-to-many"
         }
     },
     "required": [

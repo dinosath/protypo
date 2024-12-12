@@ -13,7 +13,13 @@ dependencies:
     url: "file://../seaorm-entities"
     tags:
       - seaorm
-      - spring-rs
+      - rust
+  - name: seaography
+    version: 0.0.1
+    url: "file://../seaography"
+    tags:
+      - seaography
+      - seaorm
       - rust
 sources:
   - https://github.com/dinosath/protypo

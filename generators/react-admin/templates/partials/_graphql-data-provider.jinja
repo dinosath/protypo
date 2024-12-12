@@ -24,7 +24,7 @@ const client = new ApolloClient({
 const fields = {
     {% for entity_name,entity in entities | items -%}
     {%- if not entity.properties -%}{%- continue -%}{%- endif -%}
-    '{{ entity.title | plural | kebab_case }}': "id createdAt updatedAt {{ macros.get_all_properties_by_name(entity=entity)}}"{%- if not loop.last -%},{% endif %}
+    '{{ entity.title | plural | kebab_case }}': "id createdAt updatedAt {{ macros.get_all_properties_by_name(entity)}}"{%- if not loop.last -%},{% endif %}
     {% endfor %}
 };
 

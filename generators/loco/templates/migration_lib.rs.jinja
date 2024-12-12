@@ -22,7 +22,7 @@ impl MigratorTrait for Migrator {
         vec![
             {% for entity_name,entity in entities -%}
                 {% if entity.properties -%}
-                    {% set dependencies = get_m21_relations(entity=entity) -%}
+                    {% set dependencies = get_m21_relations(entity) -%}
                     {% if dependencies | length == 0 -%}
                         Box::new({{ entity.title | snake_case }}::Migration),
                     {% else -%}

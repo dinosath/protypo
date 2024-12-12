@@ -1,9 +1,6 @@
 application:
   name: app
 
-features:
-  - graphql
-
 spring-rs:
   outputFolder: "./output"
 

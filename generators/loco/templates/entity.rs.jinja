@@ -17,7 +17,7 @@ injections:
 use sea_orm::entity::prelude::*;
 use serde::{Serialize, Deserialize};
 {{ macros.enum_imports(entity) }}
-{{ macros.seaorm_prelude_imports(entity=entity)|trim }}
+{{ macros.seaorm_prelude_imports(entity)|trim }}
 
 {% for name,property in entity.properties -%}
     {% if property.enum -%}
@@ -109,7 +109,7 @@ impl Related<crate::models::entities::{{ relation }}::Entity> for Entity {
 {% if features and 'graphql' in features -%}
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
 pub enum RelatedEntity {
-    {% set relations = get_all_relations(entity=entity) | trim -%}
+    {% set relations = get_all_relations(entity) | trim -%}
     {% if relations !="" -%}
     {% for relation in relations|split(",") -%}
     #[sea_orm(entity = "crate::models::entities::{{ relation | snake_case }}::Entity")]

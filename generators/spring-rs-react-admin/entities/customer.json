@@ -1,38 +1,30 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "item",
+  "title": "Customer",
   "type": "object",
-  "order": 2,
+  "order": 3,
   "properties": {
-    "title": {
+    "name": {
       "type": "string",
-      "maxLength": 150,
+      "maxLength": 100,
       "x-unique": true
     },
-    "checked": {
-      "type": "boolean"
-    },
-    "list": {
-      "$ref": "list.json",
-      "x-relationship": "many-to-one"
-    },
-    "tags": {
+    "favorites": {
       "type": "array",
       "items": {
-        "$ref": "tag.json"
+        "$ref": "item.json"
       },
       "x-relationship": "many-to-many"
     },
-    "customer": {
+    "lists": {
       "type": "array",
       "items": {
-        "$ref": "customer.json"
+        "$ref": "list.json"
       },
       "x-relationship": "many-to-many"
     }
   },
   "required": [
-    "title",
-    "checked"
+    "name"
   ]
 }
