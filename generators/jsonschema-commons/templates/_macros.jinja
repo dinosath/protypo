@@ -331,3 +331,9 @@
 true
 {% endif -%}
 {% endmacro -%}
+
+{% macro get_table_name(entity) -%}
+{% filter trim -%}
+{{ entity.title | plural | snake_case }}
+{% endfilter -%}
+{% endmacro -%}

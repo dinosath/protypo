@@ -3,6 +3,7 @@
 {% for entity_name,entity in entities | items -%}
 {% if entity.properties | items %}
 {% set file_name = entity.title | snake_case -%}
+{% set table_name = macros.get_table_name(entity) -%}
 {% set module_name = file_name | pascal_case -%}
 ---
 to: {{ values.outputFolder }}/src/models/{{ file_name }}.rs
@@ -31,7 +32,7 @@ enum {{ name | pascal_case }}{
 {% endfor -%}
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
-#[sea_orm(table_name = "{{ entity.title | snake_case }}")]
+#[sea_orm(table_name = "{{ table_name }}")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
     #[sea_orm(primary_key)]

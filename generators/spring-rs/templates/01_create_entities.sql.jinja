@@ -59,7 +59,7 @@ $$ LANGUAGE plpgsql;
 
 {% for entity_name,entity in entities | items | sort(attribute="1.order")-%}
 {% if entity.properties -%}
-{% set table_name = entity.title | snake_case -%}
+{% set table_name = macros.get_table_name(entity) -%}
 DROP TABLE IF EXISTS {{ table_name }};
 
 CREATE TABLE {{ table_name }}(

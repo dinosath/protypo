@@ -6,6 +6,7 @@
 {% if entity.properties %}
 
 {% set file_name = entity.title | snake_case -%}
+{% set table_name = macros.get_table_name(entity) -%}
 {% set module_name = file_name | pascal_case -%}
 ---
 to: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
@@ -19,17 +20,20 @@ use anyhow::{anyhow, Error, Context};
 use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},error::Result,extractor::{Component, Path, Query},};
 use spring_sea_orm::{pagination::{Pagination, PaginationExt},DbConn, };
 use serde::{Deserialize, Serialize};
-use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, EntityTrait, QueryFilter, Set, IntoActiveModel};
+use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, EntityTrait, QueryFilter, Set, IntoActiveModel, Statement, FromQueryResult};
 {{ macros.seaorm_prelude_imports(entity) | trim }}
 use crate::models::{{ file_name }}::{ActiveModel, Entity, Model, Column};
 use super::utils::{ListParams,update_relation_with_diff};
 
 {% if macros.has_one_to_many_relation(entity) or macros.has_many_to_many_relation(entity) -%}
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, FromQueryResult)]
 pub struct ResponseModel {
+    pub id: i32,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
     {% for name, property in entity.properties | items -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    {%- if macros.get_m2m_relation(property) or macros.relation_is_one_to_many(property)=='true' -%}
+    {%- if macros.relation_is_many_to_many(property)=='true' -%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
     pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
@@ -70,14 +74,34 @@ async fn load_item(db: &DbConn, id: i32) -> std::result::Result<Model, Error> {
 #[get("/api/{{ entity.title | plural | kebab_case  }}")]
 pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
     let ids = params.ids.unwrap_or_default();
+    let sql = r#"
+                select
+                    {{ table_name }}.id AS id,
+                    {{ table_name }}.created_at AS created_at,
+                    {{ table_name }}.updated_at AS updated_at,
+                {% for name, property in entity.properties | items -%}
+                    {%- if property.readOnly -%}{% continue -%}
+                    {%- elif macros.relation_is_many_to_many(property)=='true' -%}
+                    COALESCE(array_agg(customer_list.list_id), '{}') AS {{ name }}
+                    {% else -%}
+                    {{ table_name }}.{{ name }} as {{ name }}
+                    {% endif -%}
+                    {%- if not loop.last -%},{%- endif -%}
+                {% endfor -%}
+                FROM {{ table_name }}
+                {% for name, property in entity.properties | items -%}
+                    {%- if macros.relation_is_many_to_many(property)=='true' -%}
+                    INNER JOIN {{ macros.get_m2m_relation_model(name,property) }} ON {{ table_name }}.id = {{ macros.get_m2m_relation_model(name,property) }}.{{ file_name }}_id
+                    {% endif -%}
+                    {%- if not loop.last -%},{%- endif -%}
+                {% endfor -%}
+                GROUP BY {{ table_name }}.id;
+            "#;
 
-    let mut query = Entity::find();
-    if !ids.is_empty() {
-        query = query.filter(Column::Id.is_in(ids));
-    }
+    let query = Statement::from_string(sea_orm::DatabaseBackend::Postgres, sql.to_string());
 
-    let users = query.page(&db, pagination).await.context("list item failed")?;
-    Ok(Json(users))
+    let result: Vec<ResponseModel> = ResponseModel::find_by_statement(query).all(&db).await.context("cannot list customers")?;
+    Ok(Json(result))
 }
 
 
@@ -131,52 +155,6 @@ pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(
     ).await.context("could not update many-to-many relation {{ name }}")?;
     {% endif -%}
     {% endfor -%}
-
-    // let new_list_ids: HashSet<i32> = params.lists.into_iter().collect();
-    // update_relation_with_diff(
-    //     &db,
-    //     item.id,
-    //     new_list_ids,
-    //     crate::models::customer_list::Entity,
-    //     crate::models::customer_list::Column::CustomerId,
-    //     crate::models::customer_list::Column::ListId,
-    //     |customer_id: i32, list_id: i32| { crate::models::customer_list::ActiveModel { customer_id: Set(customer_id), list_id: Set(list_id)}
-    // }
-    //
-    // ).await.context("could not update many-to-many relation lists")?;
-
-        // let existing_lists: HashSet<i32> = crate::models::customer_list::Entity::find()
-        //     .filter(crate::models::customer_list::Column::CustomerId.eq(item.id))
-        //     .all(&db)
-        //     .await
-        //     .context("could not retrieve elements of table customer_list")?
-        //     .iter()
-        //     .map(|e| e.list_id)
-        //     .collect();
-        //
-        // let lists_to_insert: Vec<_> = new_list_ids.difference(&existing_lists)
-        //     .map(|&list_id| crate::models::customer_list::ActiveModel {
-        //         customer_id: Set(id),
-        //         list_id: Set(list_id),
-        //     })
-        //     .collect();
-        //
-        // let lists_to_delete: Vec<i32> = existing_lists.difference(&existing_lists)
-        //     .copied()
-        //     .collect();
-        // if !lists_to_insert.is_empty() {
-        //     crate::models::customer_list::Entity::insert_many(lists_to_insert)
-        //         .exec(&db).await.context("couldn't insert elements to table ")?;
-        // }
-        //
-        // if !lists_to_delete.is_empty() {
-        //     crate::models::customer_list::Entity::delete_many()
-        //         .filter(crate::models::customer_list::Column::CustomerId.eq(id))
-        //         .filter(crate::models::customer_list::Column::ListId.is_in(lists_to_delete))
-        //         .exec(&db)
-        //         .await.context("couldn't elements elements from table ")?;
-        // }
-
     Ok(Json(item))
 }
 
