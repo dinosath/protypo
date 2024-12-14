@@ -83,7 +83,7 @@ pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListPar
                 {% for name, property in entity.properties | items -%}
                     {%- if property.readOnly -%}{% continue -%}
                     {%- elif macros.relation_is_many_to_many(property)=='true' -%}
-                    COALESCE(array_agg(customer_list.list_id), '{}') AS {{ name }}
+                    COALESCE(array_agg({{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id), '{}') AS {{ name }}
                     {% else -%}
                     {{ table_name }}.{{ name }} as {{ name }}
                     {% endif -%}
