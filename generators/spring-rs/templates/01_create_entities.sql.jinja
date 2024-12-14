@@ -43,7 +43,7 @@ message: "Sql file `01_create_entities` was added successfully."
 {%- endfilter %}{%- endmacro -%}
 
 {%- macro get_reference(name, property) -%}{% filter trim -%}
-{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ macros.get_relation(property) | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
+{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
 {%- endfilter %}{%- endmacro -%}
 
 {# generate controllers #}
@@ -82,11 +82,11 @@ EXECUTE FUNCTION update_updated_at_column();
 
 
 {% for relation in macros.get_m2m_relations(entities) | split(',')  -%}
-{% set left = relation | trim | split("_") | first -%}
+{% set left = relation | trim | split("_") | first  -%}
 {% set right = relation | trim | split("_") | last -%}
 CREATE TABLE {{ relation | trim }}(
     id SERIAL PRIMARY KEY,
-    {{ left }}_id INTEGER, FOREIGN KEY( {{ left }}_id ) REFERENCES {{ left }}(id),
-    {{ right }}_id INTEGER, FOREIGN KEY( {{ right }}_id ) REFERENCES {{ right }}(id)
+    {{ left | snake_case }}_id INTEGER, FOREIGN KEY( {{ left }}_id ) REFERENCES {{ left | plural | snake_case }}(id),
+    {{ right | snake_case }}_id INTEGER, FOREIGN KEY( {{ right }}_id ) REFERENCES {{ right | plural | snake_case }}(id)
 );
 {% endfor -%}

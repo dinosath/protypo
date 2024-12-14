@@ -74,6 +74,7 @@ async fn load_item(db: &DbConn, id: i32) -> std::result::Result<Model, Error> {
 #[get("/api/{{ entity.title | plural | kebab_case  }}")]
 pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
     let ids = params.ids.unwrap_or_default();
+    //has m2m relations:
     let sql = r#"
                 select
                     {{ table_name }}.id AS id,
@@ -91,9 +92,8 @@ pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListPar
                 FROM {{ table_name }}
                 {% for name, property in entity.properties | items -%}
                     {%- if macros.relation_is_many_to_many(property)=='true' -%}
-                    INNER JOIN {{ macros.get_m2m_relation_model(name,property) }} ON {{ table_name }}.id = {{ macros.get_m2m_relation_model(name,property) }}.{{ file_name }}_id
+                    INNER JOIN {{ macros.get_m2m_relation_model(entity.title,property) }} ON {{ table_name }}.id = {{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id
                     {% endif -%}
-                    {%- if not loop.last -%},{%- endif -%}
                 {% endfor -%}
                 GROUP BY {{ table_name }}.id;
             "#;
