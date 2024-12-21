@@ -28,7 +28,7 @@ pub struct ResponseModel {
     {%- if relation_is_many_to_many(property)=='true' or relation_is_one_to_many(property=property)=='true'-%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
-    pub {{ name | snake_case }}: {{ get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endif -%}
     {% endfor %}
 }
@@ -42,7 +42,7 @@ pub struct Params {
     {%- if relation_is_many_to_many(property)=='true' -%}
     pub {{ name | snake_case }}:Vec<i32>,
     {% elif property.type -%}
-    pub {{ name | snake_case }}: {{ get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endif -%}
     {% endfor %}
 }

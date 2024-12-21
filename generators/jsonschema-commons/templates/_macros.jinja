@@ -76,68 +76,45 @@
 {%-endfilter %}
 {%- endmacro -%}
 
-{%- macro get_type(name, property) -%}
+{%- macro get_type(name, property, required=false) -%}
 {% filter trim %}
-    {% if property.type and property.type == "string" -%}
-        {% if property.format and property.format == "uuid" -%}
-            uuid::Uuid
-        {% elif property.format and property.format == "date-time" -%}
-            DateTimeWithTimeZone
-        {% elif property.format and property.format == "date" -%}
-            TimeDate
-        {% elif property.format and property.format == "time" -%}
-            TimeTime
-        {% else -%}
-            String
-        {% endif -%}    
-    {% elif property.type and property.type == "boolean" -%}
-        bool
-    {% elif property.type and property.type == "integer" -%}
-        {% set min = property.minimum or property.exclusiveMinimum -%}
-        {% set max = property.maximum or property.exclusiveMaximum -%}
-        {% if min and min >= 0 -%}
-            {% if max and max <= 255 -%}
-                u8
-            {% elif max and max <= 65535 -%}
-                u16
-            {% elif max and max <= 4294967295 -%}
-                u32
-            {% else -%}
-                u64
-            {% endif -%}
-        {% else -%}
-            {% if max and max <= 127 -%}
-                i8
-            {% elif max and max <= 32767 -%}
-                i16
-            {% elif max and max <= 2147483647 -%}
-                i32
-            {% else -%}
-                i64
-            {% endif -%}
-        {% endif -%}
-    {% elif property.type and property.type == "number" -%}
-        {% set min = property.minimum or property.exclusiveMinimum -%}
-        {% set max = property.maximum or property.exclusiveMaximum -%}
-        {% if min or max -%}
-            {% if min and min >= -3.40282347 and max and max <= 3.40282347 -%}
-                f32
-            {% else -%}
-                f64
-            {% endif -%}
-        {% else -%}
-            f64
-        {% endif -%}
-    {% elif property.enum %}
-        {{ name | pascal_case }}
-    {% elif property['$ref'] and not property['x-relationship']  %}
-        {{ name | pascal_case }}    
-    {% elif property['x-relationship'] and property['$ref'] %}
-        i32
-    {% else -%}
-        String
-    {% endif -%}
-    
+    {%- set map = [ {"type": "string", "format": "uuid", "result": "uuid::Uuid"},
+            {"type": "string", "format": "date-time", "result": "DateTimeWithTimeZone"},
+            {"type": "string", "format": "date", "result": "TimeDate"},
+            {"type": "string", "format": "time", "result": "TimeTime"},
+            {"type": "string", "result": "String"},
+            {"type": "boolean", "result": "bool"},
+            {"type": "integer", "min": 0, "max": 255, "result": "u8"},
+            {"type": "integer", "min": 0, "max": 65535, "result": "u16"},
+            {"type": "integer", "min": 0, "max": 4294967295, "result": "u32"},
+            {"type": "integer", "min": 0, "max": None, "result": "u64"},
+            {"type": "integer", "min": None, "max": 127, "result": "i8"},
+            {"type": "integer", "min": None, "max": 32767, "result": "i16"},
+            {"type": "integer", "min": None, "max": 2147483647, "result": "i32"},
+            {"type": "integer", "min": None, "max": None, "result": "i64"},
+            {"type": "number", "min": -3.40282347, "max": 3.40282347, "result": "f32"},
+            {"type": "number", "min": None, "max": None, "result": "f64"},
+            {"type": "enum", "format": None, "result": name | pascal_case },
+            {"x-relationship": "many-to-one", "result": "i32" },
+            {"x-relationship": "one-to-many", "result": "Vec<i32>" },
+            {"x-relationship": "many-to-many", "result": "Vec<i32>" }
+            ] -%}
+    {%- set type = 'None' -%}
+    {%- for entry in map -%}
+            {% set condition = property.type == entry.type and entry.format == property.format
+                                           and (min not in entry or (property.minimum or property.exclusiveMinimum) >= entry.min)
+                                           and (max not in entry or (property.maximum or property.exclusiveMaximum) <= entry.max)
+                                           or ('x-relationship' in property and entry['x-relationship'] == property['x-relationship'])
+                                           -%}
+
+            {%- if condition -%}
+
+                {%- set type = entry.result -%}
+                {%- if not required %}{%- set type = 'Option<' ~ type ~ '>' -%}{%- endif -%}
+                {{ type }}
+                {%- break -%}
+            {%- endif -%}
+    {%- endfor -%}
 {% endfilter %}
 {%- endmacro -%}
 

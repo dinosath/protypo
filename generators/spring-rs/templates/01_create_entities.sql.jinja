@@ -58,6 +58,25 @@ END;
 $$ LANGUAGE plpgsql;
 
 {% for entity_name,entity in entities | items | sort(attribute="1.order")-%}
+
+{% if entity.enum -%}
+CREATE TYPE {{ entity.name | lower }}_enum AS ENUM (
+    {% for choice in entity.enum -%}
+    '{{ choice }}'{{ "," if not loop.last }}
+    {% endfor -%}
+);
+{% endif -%}
+
+{% for prop_name, prop in entity.properties | items -%}
+    {% if prop.enum -%}
+    CREATE TYPE {{ entity.name | lower }}_{{ prop_name | lower }}_enum AS ENUM (
+        {% for choice in prop.enum -%}
+        '{{ choice }}'{{ "," if not loop.last }}
+        {% endfor -%}
+    );
+    {% endif -%}
+{% endfor -%}
+
 {% if entity.properties -%}
 {% set table_name = macros.get_table_name(entity) -%}
 DROP TABLE IF EXISTS {{ table_name }};

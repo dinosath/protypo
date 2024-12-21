@@ -9,6 +9,9 @@
       "maxLength": 100,
       "x-unique": true
     },
+    "description": {
+      "type": "string"
+    },
     "favorites": {
       "type": "array",
       "items": {

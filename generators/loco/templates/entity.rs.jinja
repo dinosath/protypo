@@ -44,7 +44,7 @@ pub struct Model {
     {%- for name, property in entity.properties -%}
     {% if relation_is_many_to_many(property)=='true' or relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
     {{ validations(name=name,property=property) }}
-    pub {{ name | snake_case }}{% if relation_is_many_to_one(property=property)=='true' and get_relation(property) | snake_case == name | snake_case -%}_id{% endif -%}: {{ get_type_with_option(name=name, property=property, required_fields=entity.required) }}{%- if not loop.last -%},{% endif -%}
+    pub {{ name | snake_case }}{% if relation_is_many_to_one(property=property)=='true' and get_relation(property) | snake_case == name | snake_case -%}_id{% endif -%}: {{ macros.get_type(name, property, name in entity.required) }}{%- if not loop.last -%},{% endif -%}
     {% endfor %}
 }
 

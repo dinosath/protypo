@@ -16,6 +16,7 @@ injections:
   append: true
   content: "pub mod {{ file_name }};"
 ---
+use std::collections::HashSet;
 use anyhow::{anyhow, Error, Context};
 use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},error::Result,extractor::{Component, Path, Query},};
 use spring_sea_orm::{pagination::{Pagination, PaginationExt},DbConn, };
@@ -33,11 +34,7 @@ pub struct ResponseModel {
     pub updated_at: DateTimeWithTimeZone,
     {% for name, property in entity.properties | items -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    {%- if macros.relation_is_many_to_many(property)=='true' -%}
-    pub {{ name | snake_case }}:Vec<i32>,
-    {% elif property.type -%}
-    pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
-    {% endif -%}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endfor %}
 }
 {% endif -%}
@@ -47,11 +44,7 @@ pub struct ResponseModel {
 pub struct Params {
     {% for name, property in entity.properties | items -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
-    {%- if macros.relation_is_many_to_many(property)=='true' -%}
-    pub {{ name | snake_case }}:Vec<i32>,
-    {% else -%}
-    pub {{ name | snake_case }}: {{ macros.get_type_with_option(name=name, property=property, required_fields=entity.required) }} {%- if not loop.last -%},{%- endif %}
-    {% endif -%}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
     {% endfor %}
 }
 
@@ -83,7 +76,7 @@ pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListPar
                 {% for name, property in entity.properties | items -%}
                     {%- if property.readOnly -%}{% continue -%}
                     {%- elif macros.relation_is_many_to_many(property)=='true' -%}
-                    COALESCE(array_agg({{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id), '{}') AS {{ name }}
+                    COALESCE(array_agg({{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id) FILTER (WHERE {{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id IS NOT NULL), '{}')::integer[] AS {{ name }}
                     {% else -%}
                     {{ table_name }}.{{ name }} as {{ name }}
                     {% endif -%}
@@ -92,7 +85,7 @@ pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListPar
                 FROM {{ table_name }}
                 {% for name, property in entity.properties | items -%}
                     {%- if macros.relation_is_many_to_many(property)=='true' -%}
-                    INNER JOIN {{ macros.get_m2m_relation_model(entity.title,property) }} ON {{ table_name }}.id = {{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id
+                    LEFT JOIN {{ macros.get_m2m_relation_model(entity.title,property) }} ON {{ table_name }}.id = {{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id
                     {% endif -%}
                 {% endfor -%}
                 GROUP BY {{ table_name }}.id;
@@ -118,14 +111,21 @@ pub async fn insert(Component(db): Component<DbConn>, Json(params): Json<Params>
     {%- if macros.relation_is_many_to_many(property)=='true' -%}
     {%- set relation = macros.get_relation(property) -%}
     {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
+    {%- if not name in entity.required -%}
+    if let Some({{ name }}) = &params.{{ name }} {
+        if !{{ name }}.is_empty() {
+    {% else -%}
+    let {{ name }} = &params.{{ name }};
     if !params.{{ name }}.is_empty() {
+    {% endif -%}
             crate::models::{{ m2m_relation_model }}::Entity::insert_many(
-                params.{{ name }}.clone().into_iter().map(|id| crate::models::{{ m2m_relation_model }}::ActiveModel {
+                {{ name }}.clone().into_iter().map(|id| crate::models::{{ m2m_relation_model }}::ActiveModel {
                     {{ file_name }}_id: Set(model.id),
                     {{ relation | snake_case }}_id: Set(id),
                 }).collect::<Vec<_>>()
             ).exec(&db).await.context(format!("failed to insert {{ name }} [{:?}] to table {{ m2m_relation_model }}", params.{{ name }}))?;
     }
+    {%- if not name in entity.required -%} } {% endif -%}
     {% endif -%}
     {% endfor -%}
 
@@ -147,7 +147,7 @@ pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(
     update_relation_with_diff(
         &db,
         item.id,
-        params.{{ name }}.into_iter().collect(),
+        params.{{ name }}.{{'into_iter()' if name in entity.required else 'iter().cloned()'}}.flatten().collect::<HashSet<i32>>(),
         crate::models::{{ m2m_relation_model }}::Entity,
         crate::models::{{ m2m_relation_model }}::Column::{{ entity.title | pascal_case }}Id,
         crate::models::{{ m2m_relation_model }}::Column::{{ relation | pascal_case }}Id,
@@ -173,7 +173,7 @@ pub async fn fetch(Component(db): Component<DbConn>, Path(id): Path<i32>,) -> Re
         {%- if macros.relation_is_many_to_many(property)=='true' -%}
         {%- set relation = macros.get_relation(property) -%}
         {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
-    model.{{ name }} = model.find_related(crate::models::{{ relation }}::Entity).all(&db).await.context("fetch relation {{ relation }}")?.iter().map(|item| item.id).collect::<Vec<i32>>();
+    model.{{ name }} = {{'Some(' if not name in entity.required }}model.find_related(crate::models::{{ relation }}::Entity).all(&db).await.context("fetch relation {{ relation }}")?.iter().map(|item| item.id).collect::<Vec<i32>>(){{ ')' if not name in entity.required }};
         {% endif -%}
     {% endfor -%}
     Ok(Json(model))
