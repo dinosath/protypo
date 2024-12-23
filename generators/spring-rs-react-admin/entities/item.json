@@ -13,6 +13,7 @@
       "type": "boolean"
     },
     "list": {
+      "type": "object",
       "$ref": "list.json",
       "x-relationship": "many-to-one"
     },

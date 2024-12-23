@@ -10,6 +10,7 @@ message: "File for ui `{{module_name}}` was created successfully."
 {# generate model ui #}
 {% import "_macros_front.jinja" as macros %}
 {% import "_macros.jinja" as core %}
+{% import "react-admin-macros.jinja" as ra_macros -%}
 
 import { Show, SimpleShowLayout, Create, List, DatagridConfigurable, TextField, BooleanField, BooleanInput, DateField, ReferenceField, EditButton, Edit, SimpleForm, ReferenceInput, TextInput,DateInput, DateTimeInput, ReferenceArrayInput, NumberField, NumberInput, required, AutocompleteInput, SelectInput } from "react-admin";
 import { ListActions } from "../components/common/action-buttons/listActions.tsx";
@@ -45,7 +46,7 @@ export const {{ entity.title | pascal_case }}Show = () => (
             {% if extraFields and 'updatedAt' in extraFields -%}<TextField source="updated_at" />{% endif -%}
             {% for name,property in entity.properties | items -%}
                 {% if core.relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
-                <{{ macros.get_field(property=property) }} source="{{ macros.source(name=name,property=property)}}" />
+            <{{ macros.get_field(property=property) }} source="{{ macros.source(name=name,property=property)}}" />
             {% endfor %}
         </SimpleShowLayout>
       </Show>
@@ -58,8 +59,8 @@ export const {{ entity.title | pascal_case }}Edit = () => (
             {% if extraFields and 'createdAt' in extraFields -%}<DateTimeInput readOnly source="created_at" />{% endif -%}
             {% if extraFields and 'updatedAt' in extraFields -%}<DateTimeInput readOnly source="updated_at" />{% endif -%}
             {% for name,property in entity.properties | items -%}
-                {% if core.relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
-                {% include "_input-field.jinja" -%}
+            {% if core.relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
+            {{ ra_macros.get_input_element(name,property) }}
             {% endfor %}
         </SimpleForm>
     </Edit>
@@ -70,8 +71,8 @@ export const {{ entity.title | pascal_case }}Create = () => (
         <SimpleForm>
             {% for name,property in entity.properties | items -%}
                 {% if core.relation_is_one_to_many(property=property)=='true' -%}{% continue -%}{% endif -%}
-                {% include "_input-field.jinja" -%}
-            {% endfor %}
+                {{ ra_macros.get_input_element(name,property) }}
+            {% endfor -%}
         </SimpleForm>
       </Create>
 );
