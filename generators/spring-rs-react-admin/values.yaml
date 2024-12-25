@@ -1,0 +1,8 @@
+application:
+  name: app
+
+spring-rs:
+  outputFolder: "./output"
+
+react-admin:
+  outputFolder: "./output/frontend"

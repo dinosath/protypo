@@ -1,6 +1,6 @@
 rrgen:
   documentSeparator: "---\n"
-  frontmatterSeparator: "===\n"
+  frontmatterSeparator: "---\n"
 
 deployment:
   shuttle:

@@ -1,0 +1,40 @@
+{% import "_macros.jinja" as macros %}
+
+
+to: {{ values.outputFolder }}/migration/src/lib.rs
+message: "Migrations `lib.rs` was added successfully."
+---
+
+#![allow(elided_lifetimes_in_paths)]
+#![allow(clippy::wildcard_imports)]
+pub use sea_orm_migration::prelude::*;
+
+pub struct Migrator;
+{% for entity_name,entity in entities -%}
+mod {{ entity.title | snake_case }};
+{% endfor %}
+
+{% set entity_with_dependencies = [] -%}
+{% set rendered_entities = [] -%}
+#[async_trait::async_trait]
+impl MigratorTrait for Migrator {
+    fn migrations() -> Vec<Box<dyn MigrationTrait>> {
+        vec![
+            {% for entity_name,entity in entities -%}
+                {% if entity.properties -%}
+                    {% set dependencies = get_m21_relations(entity) -%}
+                    {% if dependencies | length == 0 -%}
+                        Box::new({{ entity.title | snake_case }}::Migration),
+                    {% else -%}
+                        {%- set entity_with_dependencies = entity_with_dependencies | concat(entity.title) -%}
+                    {%- endif -%}
+                {%- endif -%}
+            {% endfor -%}
+            {% for entity in entity_with_dependencies -%}
+                Box::new({{ entity | snake_case }}::Migration),
+            {% endfor %}
+            
+            //migrations_end
+        ]
+    }
+}

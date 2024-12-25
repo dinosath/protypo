@@ -1,0 +1,117 @@
+{# generate entities #}
+{% import "_macros.jinja" as macros %}
+{% for entity_name,entity in entities | items -%}
+{% if entity.properties | items %}
+{% set file_name = entity.title | snake_case -%}
+{% set table_name = macros.get_table_name(entity) -%}
+{% set module_name = file_name | pascal_case -%}
+---
+to: {{ values.outputFolder }}/src/models/{{ file_name }}.rs
+message: "Entity `{{module_name}}` was added successfully."
+injections:
+- into: {{ values.outputFolder }}/src/models/mod.rs
+  append: true
+  content: "pub mod {{ file_name }};"
+---
+use sea_orm::entity::prelude::*;
+use serde::{Serialize, Deserialize};
+{{ macros.enum_imports(entity) }}
+{{ macros.seaorm_prelude_imports(entity)|trim }}
+
+{% for name,property in entity.properties | items -%}
+    {% if enum in property -%}
+#[derive(PartialEq, Clone, Debug, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::None)", enum_name = "{{ name | snake_case }}")]
+enum {{ name | pascal_case }}{
+        {% for enum in property.enum -%}
+        #[sea_orm(string_value = "{{ enum | snake_case }}")]
+        {{ enum }}{%- if not loop.last -%},{% endif -%}
+        {% endfor %}
+}
+    {% endif -%}
+{% endfor -%}
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[sea_orm(table_name = "{{ table_name }}")]
+#[serde(rename_all = "camelCase")]
+pub struct Model {
+    #[sea_orm(primary_key)]
+    #[serde(skip_deserializing)]
+    pub id: i32,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
+    {% for name, property in entity.properties | items -%}
+    {% if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}
+    #[sea_orm(ignore)]
+    {% endif -%}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }}
+    {%- if not loop.last -%},{% endif %}
+    {% endfor %}
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+{% for name,property in entity.properties | items -%}
+    {% set relation = macros.get_relation(property) | snake_case -%}
+    {% if relation != '' -%}
+    {% if macros.relation_is_many_to_one(property)=='true' -%}
+        #[sea_orm(belongs_to = "super::{{ relation }}::Entity",
+        from = "Column::{{ name | pascal_case }}",
+        to = "super::{{ relation }}::Column::Id")]
+    {% else -%}
+    #[sea_orm(has_many = "super::{{ relation }}::Entity")]
+    {% endif -%}
+    {% if macros.relation_is_many_to_many(property)=='true' -%}
+        {{ relation | pascal_case }},
+    {% else -%}
+        {{ name | pascal_case }},
+    {% endif -%}
+
+    {% endif -%}
+{% endfor -%}
+}
+
+{% set ns = namespace(implemented_relations=[]) %}
+{% for name,property in entity.properties | items -%}
+    {%- set relation = macros.get_relation(property) | snake_case -%}
+    {%- if relation!='' and relation not in implemented_relations -%}
+    {% set implemented_relations = ns.implemented_relations + [relation]  -%}
+    {% if macros.relation_is_many_to_many(property)=='true'-%}
+    {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
+impl Related<super::{{ relation }}::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::{{ m2m_relation_model }}::Relation::{{ relation | pascal_case }}.def()
+    }
+
+    fn via() -> Option<RelationDef> {
+        Some(super::{{ m2m_relation_model }}::Relation::{{ entity.title | pascal_case }}.def().rev())
+    }
+}
+        {% else -%}
+impl Related<super::{{ relation | snake_case }}::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::{{ name | pascal_case }}.def()
+    }
+}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor %}
+
+{% if features and 'graphql' in features -%}
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
+pub enum RelatedEntity {
+    {% set relations = get_all_relations(entity) | trim -%}
+    {% if relations !="" -%}
+    {% for relation in relations | split(",") -%}
+    #[sea_orm(entity = "super::{{ relation | snake_case }}::Entity")]
+    {{ relation | pascal_case }}{%- if not loop.last -%},{% endif -%}
+    {% endfor -%}
+    {% endif -%}
+}
+{% endif -%}
+
+impl ActiveModelBehavior for ActiveModel {
+}
+---
+{% endif %}
+{% endfor -%}

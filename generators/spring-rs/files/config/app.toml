@@ -1,0 +1,27 @@
+[web]
+port = 8080
+graceful = true
+
+[web.middlewares]
+compression = { enable = true }
+logger = { enable = true, level = "info" }
+catch_panic = { enable = true }
+timeout_request = { enable = true, timeout = 30000 }
+static = { enable = true, uri = "/", path = "static", precompressed = true, fallback = "index.html" }
+
+[sea-orm]
+uri = "${DATABASE_URL:postgres://postgres:xudjf23adj213@localhost:5432}"
+min_connections = 1
+max_connections = 10
+acquire_timeout = 30000
+idle_timeout = 600000
+connect_timeout = 1800000
+enable_logging = true
+
+[sea-orm-web]
+one_indexed = true
+max_page_size = 2000
+default_page_size = 10
+
+[logger]
+pretty_backtrace = true

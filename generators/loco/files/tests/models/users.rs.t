@@ -1,7 +1,7 @@
 {% set file_name= values.outputFolder ~"/tests/models/user.rs" %}
 to: {{file_name}}
 message: "File `{{file_name}}` was created successfully."
-===
+---
 use insta::assert_debug_snapshot;
 use loco_rs::{model::ModelError, testing};
 use {{ values.application.name }}::{

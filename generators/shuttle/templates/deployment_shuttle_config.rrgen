@@ -1,5 +1,0 @@
-to: "{{ values.outputFolder }}/Shuttle.toml"
-skip_exists: true
-message: "Shuttle.toml file created successfully"
-===
-name = "{{ values.application.name }}"

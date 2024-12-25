@@ -1,0 +1,12 @@
+{# generate controllers #}
+{% import "_macros.jinja" as macros -%}
+to: {{ values.outputFolder }}/src/controllers/mod.rs
+message: "Controllers mod.rs was created successfully."
+---
+pub mod utils;
+pub mod auth;
+{% for entity_name,entity in entities -%}
+{% if entity.properties -%}
+pub mod {{ entity.title | snake_case }};
+{% endif -%}
+{% endfor -%}

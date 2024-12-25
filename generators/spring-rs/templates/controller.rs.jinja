@@ -1,0 +1,184 @@
+{# generate controllers #}
+{% import "_macros.jinja" as macros %}
+
+{% if 'features' in values and 'rest' in values.features  -%}
+{% for entity_name,entity in entities | items -%}
+{% if entity.properties %}
+
+{% set file_name = entity.title | snake_case -%}
+{% set table_name = macros.get_table_name(entity) -%}
+{% set module_name = file_name | pascal_case -%}
+---
+to: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+message: "Controller `{{module_name}}` was added successfully."
+injections:
+- into: {{ values.outputFolder }}/src/controllers/mod.rs
+  append: true
+  content: "pub mod {{ file_name }};"
+---
+use std::collections::HashSet;
+use anyhow::{anyhow, Error, Context};
+use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},error::Result,extractor::{Component, Path, Query},};
+use spring_sea_orm::{pagination::{Pagination, PaginationExt},DbConn, };
+use serde::{Deserialize, Serialize};
+use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, EntityTrait, QueryFilter, Set, IntoActiveModel, Statement, FromQueryResult};
+{{ macros.seaorm_prelude_imports(entity) | trim }}
+use crate::models::{{ file_name }}::{ActiveModel, Entity, Model, Column};
+use super::utils::{ListParams,update_relation_with_diff};
+
+{% if macros.has_one_to_many_relation(entity) or macros.has_many_to_many_relation(entity) -%}
+#[derive(Clone, Debug, Serialize, Deserialize, FromQueryResult)]
+pub struct ResponseModel {
+    pub id: i32,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
+    {% for name, property in entity.properties | items -%}
+    {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
+    {% endfor %}
+}
+{% endif -%}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Params {
+    {% for name, property in entity.properties | items -%}
+    {%- if property.readOnly-%}{% continue -%}{%- endif -%}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
+    {% endfor %}
+}
+
+impl Params {
+    fn update(&self, item: &mut ActiveModel) {
+      {% for name, property in entity.properties | items -%}
+        {%- if property.readOnly or macros.relation_is_many_to_many(property)=='true' -%}{% continue -%}
+        {%- else -%}
+      item.{{ name | snake_case }} = Set(self.{{ name | snake_case }}.clone());
+        {% endif -%}
+      {%- endfor -%}
+    }
+}
+
+async fn load_item(db: &DbConn, id: i32) -> std::result::Result<Model, Error> {
+    let item = Entity::find_by_id(id).one(db).await.context("Failed to find entity")?;
+    item.ok_or_else(|| anyhow!("Entity not found"))
+}
+
+#[get("/api/{{ entity.title | plural | kebab_case  }}")]
+pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
+    let ids = params.ids.unwrap_or_default();
+    //has m2m relations:
+    let sql = r#"
+                select
+                    {{ table_name }}.id AS id,
+                    {{ table_name }}.created_at AS created_at,
+                    {{ table_name }}.updated_at AS updated_at,
+                {% for name, property in entity.properties | items -%}
+                    {%- if property.readOnly -%}{% continue -%}
+                    {%- elif macros.relation_is_many_to_many(property)=='true' -%}
+                    COALESCE(array_agg({{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id) FILTER (WHERE {{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id IS NOT NULL), '{}')::integer[] AS {{ name }}
+                    {% else -%}
+                    {{ table_name }}.{{ name }} as {{ name }}
+                    {% endif -%}
+                    {%- if not loop.last -%},{%- endif -%}
+                {% endfor -%}
+                FROM {{ table_name }}
+                {% for name, property in entity.properties | items -%}
+                    {%- if macros.relation_is_many_to_many(property)=='true' -%}
+                    LEFT JOIN {{ macros.get_m2m_relation_model(entity.title,property) }} ON {{ table_name }}.id = {{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id
+                    {% endif -%}
+                {% endfor -%}
+                GROUP BY {{ table_name }}.id;
+            "#;
+
+    let query = Statement::from_string(sea_orm::DatabaseBackend::Postgres, sql.to_string());
+
+    let result: Vec<ResponseModel> = ResponseModel::find_by_statement(query).all(&db).await.context("cannot list customers")?;
+    Ok(Json(result))
+}
+
+
+#[post("/api/{{ entity.title | plural | kebab_case  }}")]
+pub async fn insert(Component(db): Component<DbConn>, Json(params): Json<Params>) -> Result<impl IntoResponse> {
+    let mut active_model = ActiveModel {
+        ..Default::default()
+    };
+    params.update(&mut active_model);
+    let model = active_model.insert(&db).await.context("failed to insert item")?;
+
+    {% for name, property in entity.properties | items -%}
+    {%- if property.readOnly-%}{% continue -%}{%- endif -%}
+    {%- if macros.relation_is_many_to_many(property)=='true' -%}
+    {%- set relation = macros.get_relation(property) -%}
+    {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
+    {%- if not name in entity.required -%}
+    if let Some({{ name }}) = &params.{{ name }} {
+        if !{{ name }}.is_empty() {
+    {% else -%}
+    let {{ name }} = &params.{{ name }};
+    if !params.{{ name }}.is_empty() {
+    {% endif -%}
+            crate::models::{{ m2m_relation_model }}::Entity::insert_many(
+                {{ name }}.clone().into_iter().map(|id| crate::models::{{ m2m_relation_model }}::ActiveModel {
+                    {{ file_name }}_id: Set(model.id),
+                    {{ relation | snake_case }}_id: Set(id),
+                }).collect::<Vec<_>>()
+            ).exec(&db).await.context(format!("failed to insert {{ name }} [{:?}] to table {{ m2m_relation_model }}", params.{{ name }}))?;
+    }
+    {%- if not name in entity.required -%} } {% endif -%}
+    {% endif -%}
+    {% endfor -%}
+
+    Ok(Json(model))
+}
+
+#[put("/api/{{ entity.title | plural | kebab_case  }}/:id")]
+pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<impl IntoResponse> {
+    let item = load_item(&db, id).await?;
+    let mut item = item.into_active_model();
+    params.update(&mut item);
+    let item = item.update(&db).await.context("failed to update item")?;
+
+    {% for name, property in entity.properties | items -%}
+    {%- if property.readOnly-%}{% continue -%}{%- endif -%}
+    {%- if macros.relation_is_many_to_many(property)=='true' -%}
+    {%- set relation = macros.get_relation(property) -%}
+    {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
+    update_relation_with_diff(
+        &db,
+        item.id,
+        params.{{ name }}.{{'into_iter()' if name in entity.required else 'iter().cloned()'}}.flatten().collect::<HashSet<i32>>(),
+        crate::models::{{ m2m_relation_model }}::Entity,
+        crate::models::{{ m2m_relation_model }}::Column::{{ entity.title | pascal_case }}Id,
+        crate::models::{{ m2m_relation_model }}::Column::{{ relation | pascal_case }}Id,
+        |{{ file_name }}_id: i32, {{ relation }}_id: i32| { crate::models::{{ m2m_relation_model }}::ActiveModel { {{ file_name }}_id: Set({{ file_name }}_id), {{ relation }}_id: Set({{ relation }}_id)}}
+    ).await.context("could not update many-to-many relation {{ name }}")?;
+    {% endif -%}
+    {% endfor -%}
+    Ok(Json(item))
+}
+
+#[delete("/api/{{ entity.title | plural | kebab_case  }}/:id")]
+pub async fn remove(Component(db): Component<DbConn>, Path(id): Path<i32>) -> Result<impl IntoResponse> {
+    let item = load_item(&db, id).await?;
+    item.delete(&db).await.context("failed to delete item")?;
+    Ok(Json(()))
+}
+
+#[get("/api/{{ entity.title | plural | kebab_case  }}/:id")]
+pub async fn fetch(Component(db): Component<DbConn>, Path(id): Path<i32>,) -> Result<impl IntoResponse> {
+    let mut model = load_item(&db, id).await?;
+    {% for name, property in entity.properties | items -%}
+        {%- if property.readOnly-%}{% continue -%}{%- endif -%}
+        {%- if macros.relation_is_many_to_many(property)=='true' -%}
+        {%- set relation = macros.get_relation(property) -%}
+        {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
+    model.{{ name }} = {{'Some(' if not name in entity.required }}model.find_related(crate::models::{{ relation }}::Entity).all(&db).await.context("fetch relation {{ relation }}")?.iter().map(|item| item.id).collect::<Vec<i32>>(){{ ')' if not name in entity.required }};
+        {% endif -%}
+    {% endfor -%}
+    Ok(Json(model))
+}
+---
+{% endif -%}
+{% endfor -%}
+{% endif -%}

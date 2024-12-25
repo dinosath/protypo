@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "item",
+  "type": "object",
+  "order": 2,
+  "properties": {
+    "title": {
+      "type": "string",
+      "maxLength": 150,
+      "x-unique": true
+    },
+    "checked": {
+      "type": "boolean"
+    },
+    "list": {
+      "type": "object",
+      "$ref": "list.json",
+      "x-relationship": "many-to-one"
+    },
+    "color": {
+      "type": "string",
+      "enum": ["red", "amber", "green"]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "$ref": "tag.json"
+      },
+      "x-relationship": "many-to-many"
+    },
+    "customer": {
+      "type": "array",
+      "items": {
+        "$ref": "customer.json"
+      },
+      "x-relationship": "many-to-many"
+    }
+  },
+  "required": [
+    "title",
+    "checked"
+  ]
+}

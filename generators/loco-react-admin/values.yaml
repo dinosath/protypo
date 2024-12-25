@@ -1,8 +1,8 @@
 loco:
   application:
-    name: erp
+    name: app
   outputFolder: "./output"
 react-admin:
   application:
-    name: erp
+    name: app
   outputFolder: "./output/frontend"
