@@ -2,7 +2,13 @@ name: Build
 on:
   workflow_call:
   pull_request:
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
   push:
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
 
 env:
   RUST_TOOLCHAIN: stable

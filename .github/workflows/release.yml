@@ -10,11 +10,13 @@ on:
       - main
 
 jobs:
-  release-plz:
+  release-cli:
     name: Release-plz
     runs-on: ubuntu-latest
     steps:
       - name: Run release-plz
         uses: release-plz/action@v0.5
+        with:
+          manifest_path: protypo/Cargo.toml
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
