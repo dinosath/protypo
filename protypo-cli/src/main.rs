@@ -114,7 +114,9 @@ async fn main() -> Result<(), Error> {
                 values = replaced;
             }
 
-            let path = if let (Some(generator_name), Some(generator_version)) = (name.clone(), version.clone()) {
+            let path = if let (Some(generator_name), Some(generator_version)) =
+                (name.clone(), version.clone())
+            {
                 local_repo
                     .join("generators")
                     .join(generator_name)
@@ -123,10 +125,12 @@ async fn main() -> Result<(), Error> {
                 debug!("Searching for generator in path: {} ", path.display());
                 path
             } else {
-                let error_message = "Error: Either generator name and version or a URI must be provided.";
+                let error_message =
+                    "Error: Either generator name and version or a URI must be provided.";
                 error!(error_message);
                 return Err(anyhow!(error_message));
-            };            let generator = Generator::from_directory(path.as_path()).await?;
+            };
+            let generator = Generator::from_directory(path.as_path()).await?;
             debug!("copied files");
             let ctx = json!({
                 "values": {},

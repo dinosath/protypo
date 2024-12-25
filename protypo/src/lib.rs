@@ -121,7 +121,7 @@ impl Generator {
     /// Creates a new generator from a url.
     ///
     /// It will download the file and export it to a temporary directory if the url is from http/https. Then it will call `from_directory` in order to create a
-    /// generator struct from given directory. The directory must follow 
+    /// generator struct from given directory. The directory must follow
     /// the structure of a generator directory.
     ///
     /// # Errors
@@ -154,12 +154,12 @@ impl Generator {
         };
         Self::from_directory(&url_path).await
     }
-    
+
     /// Creates a new generator from a directory.
     ///
-    /// Will try to create a generator struct from given directory. The directory must follow 
+    /// Will try to create a generator struct from given directory. The directory must follow
     /// the structure of a generator directory.
-    /// 
+    ///
     /// # Errors
     ///
     /// Will return `io::Error` if `filename` does not exist or the user does not have
@@ -209,7 +209,7 @@ impl Generator {
 
     /// Creates a new generator from a directory.
     ///
-    /// Will try to create a generator struct from given directory. The directory must follow 
+    /// Will try to create a generator struct from given directory. The directory must follow
     /// the structure of a generator directory.
     ///
     /// # Errors
@@ -235,7 +235,7 @@ impl Generator {
     /// # Errors
     ///
     /// Will return `io::Error` if an error occurs during the pipeline
-    /// 
+    ///
     /// # Panics
     ///
     /// Will return `io::Error` if an error occurs during the pipeline
@@ -333,9 +333,7 @@ impl Generator {
         if !destination_dir.is_dir() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
-                format!(
-                    "Destination directory {destination_dir:?} is not a directory",
-                ),
+                format!("Destination directory {destination_dir:?} is not a directory",),
             ));
         }
 
@@ -457,7 +455,9 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
     let cursor = Cursor::new(bytes);
     if std::path::Path::new(&url.to_string())
         .extension()
-        .map_or(false, |ext| ext.eq_ignore_ascii_case("zip")) || url.to_string().ends_with(".tar.gz") {
+        .map_or(false, |ext| ext.eq_ignore_ascii_case("zip"))
+        || url.to_string().ends_with(".tar.gz")
+    {
         let mut zip = ZipArchive::new(cursor)?;
         zip.extract(&temp_dir)?;
     }
@@ -493,13 +493,16 @@ fn read_yaml_file<T: for<'de> Deserialize<'de>>(
     file_name: &str,
 ) -> Result<T, io::Error> {
     let file_path = base_path.join(file_name);
-    let content = fs::read_to_string(file_path.clone()).map_err(|e| 
-        io::Error::new(io::ErrorKind::NotFound, format!("Error reading file {file_path:?} due to the following error:{e:?}:"), )
-    )?;
+    let content = fs::read_to_string(file_path.clone()).map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("Error reading file {file_path:?} due to the following error:{e:?}:"),
+        )
+    })?;
 
     let data: T = serde_yaml::from_str(&content).map_err(|e| {
         io::Error::new(
-            io::ErrorKind::InvalidData, 
+            io::ErrorKind::InvalidData,
             format!("Cannot deserialize file {file_path:?} due to error:{e:?}"),
         )
     })?;
