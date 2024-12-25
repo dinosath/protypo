@@ -2,6 +2,8 @@
 name = "protypo"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A library for code generation using rrgen and jinja like templates."
 
 [profile.release]
 opt-level = 3
