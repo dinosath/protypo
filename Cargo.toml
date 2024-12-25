@@ -1,5 +1,5 @@
 [workspace]
-members = ["protypo-*"]
+members = ["protypo","protypo-cli"]
 exclude = ["examples/README.md","output"]
 resolver = "2"
 
