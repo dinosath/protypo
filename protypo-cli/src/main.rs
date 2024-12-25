@@ -2,6 +2,7 @@ use anyhow::{anyhow, Error};
 use clap::Parser;
 use clap_derive::Subcommand;
 use jsonptr::Pointer;
+use protypo::Generator;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fs;
@@ -9,7 +10,6 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 use tracing::{debug, error, info};
 use tracing_subscriber::EnvFilter;
-use protypo::{Generator};
 
 #[derive(Parser, Debug)]
 #[command(version, about="CLI application for downloading and running tera and rrgen templates", long_about = None)]
@@ -40,7 +40,7 @@ pub struct Generate {
 
 impl Default for Generate {
     fn default() -> Generate {
-        Generate{
+        Generate {
             output: ".".to_string(),
         }
     }
@@ -55,7 +55,7 @@ enum Commands {
     /// use generator to create output
     Generate {
         /// path to generator
-        #[arg(short='p',long)]
+        #[arg(short = 'p', long)]
         generator_path: Option<PathBuf>,
         /// the name of the generator
         #[arg(short, long, conflicts_with = "uri")]
@@ -64,11 +64,11 @@ enum Commands {
         #[arg(short, long, conflicts_with = "uri")]
         version: Option<String>,
         /// uri to download and use generator
-        #[arg(short='u', long, conflicts_with = "name", conflicts_with = "version")]
+        #[arg(short = 'u', long, conflicts_with = "name", conflicts_with = "version")]
         uri: Option<String>,
         #[arg(long = "set")]
         sets: Vec<String>,
-    }
+    },
 }
 
 #[tokio::main]
@@ -81,14 +81,23 @@ async fn main() -> Result<(), Error> {
     let local_repo = dirs::data_local_dir().unwrap().join("protypo");
     info!("directory for protypo config and data: {:?}!", local_repo);
     let local_repo_generators = local_repo.join("generators");
-    info!("directory for installing templates: {:?}!", local_repo_generators);
+    info!(
+        "directory for installing templates: {:?}!",
+        local_repo_generators
+    );
     match &cli.command {
         Commands::New { name } => {
             info!("Creating new template: {name}");
             create_new_template(name);
             Ok(())
-        },
-        Commands::Generate { name,version,uri, generator_path, sets} => {
+        }
+        Commands::Generate {
+            name,
+            version,
+            uri,
+            generator_path,
+            sets,
+        } => {
             let mut values = json!({});
             for set in sets {
                 let parts: Vec<&str> = set.splitn(2, '=').collect();
@@ -99,7 +108,7 @@ async fn main() -> Result<(), Error> {
                 let key = parts[0];
                 let val = parts[1];
 
-                let ptr_path= key.replace(".","/");
+                let ptr_path = key.replace(".", "/");
                 let ptr = Pointer::parse(ptr_path.as_str()).unwrap();
                 let replaced = ptr.assign(&mut values, json!(val)).unwrap().unwrap();
                 values = replaced;
@@ -109,15 +118,19 @@ async fn main() -> Result<(), Error> {
                 true if name.is_some() && version.is_some() => {
                     let generator_name = name.clone().unwrap();
                     let generator_version = version.clone().unwrap();
-                    local_repo.join("generators").join(generator_name).join(generator_version)
-                },
+                    local_repo
+                        .join("generators")
+                        .join(generator_name)
+                        .join(generator_version)
+                }
                 true if generator_path.is_some() => {
                     let path = generator_path.clone().unwrap();
                     debug!("Searching for generator in path: {} ", path.display());
                     path
                 }
                 _ => {
-                    let error_message = "Error: Either generator name and version or a URI must be provided.";
+                    let error_message =
+                        "Error: Either generator name and version or a URI must be provided.";
                     error!(error_message);
                     return Err(anyhow!(error_message));
                 }
@@ -131,8 +144,7 @@ async fn main() -> Result<(), Error> {
             generator.generate(&ctx)?;
 
             Ok(())
-        },
-
+        }
     }
 }
 
@@ -155,7 +167,11 @@ fn create_new_template(name: &str) {
     };
 
     let metadata_yaml = serde_yaml::to_string(&metadata).unwrap();
-    serde_yaml::to_writer(File::create(&format!("{}/template.yaml", package_dir)).unwrap(), &metadata_yaml).unwrap();
+    serde_yaml::to_writer(
+        File::create(&format!("{}/template.yaml", package_dir)).unwrap(),
+        &metadata_yaml,
+    )
+    .unwrap();
     fs::create_dir_all(&package_dir).unwrap();
 
     // Create the files
