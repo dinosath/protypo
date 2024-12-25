@@ -168,7 +168,7 @@ fn create_new_template(name: &str) {
 
     let metadata_yaml = serde_yaml::to_string(&metadata).unwrap();
     serde_yaml::to_writer(
-        File::create(&format!("{}/template.yaml", package_dir)).unwrap(),
+        File::create(format!("{}/template.yaml", package_dir)).unwrap(),
         &metadata_yaml,
     )
     .unwrap();

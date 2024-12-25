@@ -126,14 +126,14 @@ impl Generator {
             debug!("Using url is filesystem path: {}", file_path);
             let path = Path::new(&file_path);
             if path.is_relative() {
-                let path = base_path.join(path);
-                path
+                
+                base_path.join(path)
             } else {
                 path.to_path_buf()
             }
         } else if url.scheme() == "http" || url.scheme() == "https" {
-            let temp_path = download_and_extract_to_temp(url.clone()).await?;
-            temp_path
+            
+            download_and_extract_to_temp(url.clone()).await?
         } else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -188,7 +188,6 @@ impl Generator {
 
         if let Some(generator_obj) = values
             .get(self.generator_yaml.name.clone())
-            .and_then(|v| Some(v))
         {
             generator_values.merge(generator_obj);
         }
@@ -300,7 +299,7 @@ impl Generator {
             for file in self.files.clone().unwrap() {
                 let file_path = Path::new(&file);
                 let destination =
-                    construct_destination_path(&base_path, &file_path, destination_dir)?;
+                    construct_destination_path(&base_path, file_path, destination_dir)?;
                 let destination_parent = destination.parent().unwrap();
 
                 debug!("{} - Source file: {:?}", self.key(), file_path);
@@ -330,7 +329,7 @@ impl Generator {
                     }
                 }
 
-                match fs::copy(&file_path, &destination) {
+                match fs::copy(file_path, &destination) {
                     Ok(bytes_copied) => {
                         debug!(
                             "{} - Successfully copied file {:?} to {:?}. Bytes copied: {}",
@@ -381,7 +380,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
             ErrorKind::Other,
             format!(
                 "Failed to download file {} due to error: {}",
-                url.to_string(),
+                url,
                 e
             ),
         )
@@ -403,7 +402,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
             ErrorKind::Other,
             format!(
                 "Failed to read response bytes of file downloaded from url {} due to error: {}",
-                url.to_string(),
+                url,
                 e
             ),
         )
@@ -556,7 +555,6 @@ fn read_optional_entities(base_path: &Path, dir_name: &str) -> Result<Value, io:
 
     let schemas: Map<String, Value> = glob(glob_pattern)
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
-        .into_iter()
         .filter_map(|file_path_result| {
             let file_path = file_path_result.ok()?;
             let content = fs::read_to_string(&file_path).ok()?;
