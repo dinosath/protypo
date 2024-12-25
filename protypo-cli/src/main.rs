@@ -39,8 +39,8 @@ pub struct Generate {
 }
 
 impl Default for Generate {
-    fn default() -> Generate {
-        Generate {
+    fn default() -> Self {
+        Self {
             output: ".".to_string(),
         }
     }
@@ -94,7 +94,7 @@ async fn main() -> Result<(), Error> {
         Commands::Generate {
             name,
             version,
-            uri,
+            uri: _,
             generator_path,
             sets,
         } => {
@@ -108,34 +108,25 @@ async fn main() -> Result<(), Error> {
                 let key = parts[0];
                 let val = parts[1];
 
-                let ptr_path = key.replace(".", "/");
+                let ptr_path = key.replace('.', "/");
                 let ptr = Pointer::parse(ptr_path.as_str()).unwrap();
                 let replaced = ptr.assign(&mut values, json!(val)).unwrap().unwrap();
                 values = replaced;
             }
 
-            let path = match true {
-                true if name.is_some() && version.is_some() => {
-                    let generator_name = name.clone().unwrap();
-                    let generator_version = version.clone().unwrap();
-                    local_repo
-                        .join("generators")
-                        .join(generator_name)
-                        .join(generator_version)
-                }
-                true if generator_path.is_some() => {
-                    let path = generator_path.clone().unwrap();
-                    debug!("Searching for generator in path: {} ", path.display());
-                    path
-                }
-                _ => {
-                    let error_message =
-                        "Error: Either generator name and version or a URI must be provided.";
-                    error!(error_message);
-                    return Err(anyhow!(error_message));
-                }
-            };
-            let generator = Generator::from_directory(path.as_path()).await?;
+            let path = if let (Some(generator_name), Some(generator_version)) = (name.clone(), version.clone()) {
+                local_repo
+                    .join("generators")
+                    .join(generator_name)
+                    .join(generator_version)
+            } else if let Some(path) = generator_path.clone() {
+                debug!("Searching for generator in path: {} ", path.display());
+                path
+            } else {
+                let error_message = "Error: Either generator name and version or a URI must be provided.";
+                error!(error_message);
+                return Err(anyhow!(error_message));
+            };            let generator = Generator::from_directory(path.as_path()).await?;
             debug!("copied files");
             let ctx = json!({
                 "values": {},
@@ -151,7 +142,7 @@ async fn main() -> Result<(), Error> {
 /// Function to create the new template package
 fn create_new_template(name: &str) {
     // Define the directory structure and file contents
-    let package_dir = format!("./{}", name);
+    let package_dir = format!("./{name:?}");
 
     if Path::new(&package_dir).exists() {
         error!("Directory '{}' already exists!", name);
@@ -168,29 +159,27 @@ fn create_new_template(name: &str) {
 
     let metadata_yaml = serde_yaml::to_string(&metadata).unwrap();
     serde_yaml::to_writer(
-        File::create(format!("{}/template.yaml", package_dir)).unwrap(),
+        File::create(format!("{package_dir:?}/template.yaml")).unwrap(),
         &metadata_yaml,
     )
     .unwrap();
     fs::create_dir_all(&package_dir).unwrap();
 
     // Create the files
-    create_file(&format!("{}/template.yaml", package_dir), &metadata_yaml);
+    create_file(&format!("{package_dir:?}/template.yaml"), &metadata_yaml);
     create_file(
-        &format!("{}/README.md", package_dir),
+        &format!("{package_dir:?}/README.md"),
         "# Template README\n\nThis is your template's README file.",
     );
     create_file(
-        &format!("{}/template.html", package_dir),
+        &format!("{package_dir:?}/template.html"),
         "<!-- Your template content here -->",
     );
 
-    println!("Template package '{}' has been created!", name);
+    println!("Template package '{name:?}' has been created!");
 }
 
 /// Helper function to create a file with content
 fn create_file(path: &str, _content: &str) {
-    // let file = File::create(path).unwrap();
-    // file.write_all(content.as_bytes()).unwrap();
-    println!("Created file: {}", path);
+    println!("Created file: {path:?}");
 }

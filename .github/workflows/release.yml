@@ -1,9 +1,6 @@
-name: Build and Publish Rust Crate
+name: Release Rust Crate
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 env:

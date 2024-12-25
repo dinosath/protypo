@@ -118,6 +118,20 @@ impl Generator {
         )
     }
 
+    /// Creates a new generator from a url.
+    ///
+    /// It will download the file and export it to a temporary directory if the url is from http/https. Then it will call `from_directory` in order to create a
+    /// generator struct from given directory. The directory must follow 
+    /// the structure of a generator directory.
+    ///
+    /// # Errors
+    ///
+    /// Will return `io::Error` if `url` is wrong or the user does not have
+    /// permission to read it.
+    /// # Panics
+    ///
+    /// Will return `io::Error` if `filename` does not exist or the user does not have
+    /// permission to read it.
     pub async fn from_url(url: &Url, base_path: &Path) -> Result<Self, io::Error> {
         let url_path = if url.scheme() == "file" {
             let url = url.to_string();
@@ -140,7 +154,20 @@ impl Generator {
         };
         Self::from_directory(&url_path).await
     }
-
+    
+    /// Creates a new generator from a directory.
+    ///
+    /// Will try to create a generator struct from given directory. The directory must follow 
+    /// the structure of a generator directory.
+    /// 
+    /// # Errors
+    ///
+    /// Will return `io::Error` if `filename` does not exist or the user does not have
+    /// permission to read it.
+    /// # Panics
+    ///
+    /// Will return `io::Error` if `filename` does not exist or the user does not have
+    /// permission to read it.
     pub async fn from_directory(base_path: &Path) -> Result<Self, io::Error> {
         debug!("Creating generator from directory: {}", base_path.display());
         let generator_yaml: GeneratorYaml = read_yaml_file(base_path, "Generator.yaml")?;
@@ -152,13 +179,13 @@ impl Generator {
         let templates = glob_to_map(base_path.join("templates").join("**/*").to_str().unwrap());
         let entities = read_optional_entities(base_path, "entities")?;
 
-        let dependencies: Vec<Generator> = match &generator_yaml.dependencies {
+        let dependencies: Vec<Self> = match &generator_yaml.dependencies {
             None => {
                 vec![]
             }
             Some(dependencies) => {
                 futures::future::join_all(dependencies.iter().map(|dependency| async {
-                    Generator::from_url(&dependency.repository, base_path)
+                    Self::from_url(&dependency.repository, base_path)
                         .await
                         .unwrap()
                 }))
@@ -166,7 +193,7 @@ impl Generator {
             }
         };
 
-        Ok(Generator {
+        Ok(Self {
             base_path: base_path.to_str().unwrap().to_owned(),
             generator_yaml,
             license,
@@ -180,7 +207,20 @@ impl Generator {
         })
     }
 
-    fn get_values(&self, values: Value) -> Value {
+    /// Creates a new generator from a directory.
+    ///
+    /// Will try to create a generator struct from given directory. The directory must follow 
+    /// the structure of a generator directory.
+    ///
+    /// # Errors
+    ///
+    /// Will return `io::Error` if `filename` does not exist or the user does not have
+    /// permission to read it.
+    /// # Panics
+    ///
+    /// Will return `io::Error` if `filename` does not exist or the user does not have
+    /// permission to read it.
+    fn get_values(&self, values: &Value) -> Value {
         let mut generator_values = self.values.clone();
         generator_values.merge(&values.clone());
 
@@ -190,8 +230,17 @@ impl Generator {
         generator_values.clone()
     }
 
+    /// It will run the whole generation pipeline first copying the files and then generating the templates.
+    ///
+    /// # Errors
+    ///
+    /// Will return `io::Error` if an error occurs during the pipeline
+    /// 
+    /// # Panics
+    ///
+    /// Will return `io::Error` if an error occurs during the pipeline
     pub fn generate(&self, ctx: &Value) -> Result<(), io::Error> {
-        self.copy_files(ctx.clone())?;
+        self.copy_files(&ctx.clone())?;
 
         let mut context = ctx.clone().as_object().unwrap().clone();
         context.insert("entities".to_string(), self.collect_entities());
@@ -215,7 +264,7 @@ impl Generator {
             self.generator_yaml.name, self.generator_yaml.version, self.templates
         );
 
-        let generator_values = self.get_values(ctx.get("values").unwrap().clone());
+        let generator_values = self.get_values(&ctx.get("values").unwrap().clone());
 
         let generator_context = json!({
             "values": generator_values,
@@ -250,11 +299,19 @@ impl Generator {
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
             }
         }
-
         Ok(())
     }
 
-    fn copy_files(&self, values: Value) -> Result<(), io::Error> {
+    /// It will copy the files and then generating the templates.
+    ///
+    /// # Errors
+    ///
+    /// Will return `io::Error` if an error occurs during the pipeline
+    ///
+    /// # Panics
+    ///
+    /// Will return `io::Error` if an error occurs during the pipeline
+    fn copy_files(&self, values: &Value) -> Result<(), io::Error> {
         let generator_values = self.get_values(values);
 
         let destination_dir_str = generator_values
@@ -277,8 +334,7 @@ impl Generator {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 format!(
-                    "Destination directory {:?} is not a directory",
-                    destination_dir
+                    "Destination directory {destination_dir:?} is not a directory",
                 ),
             ));
         }
@@ -313,7 +369,7 @@ impl Generator {
                         destination_parent
                     );
                     match fs::create_dir_all(destination_parent) {
-                        Ok(_) => debug!(
+                        Ok(()) => debug!(
                             "{} - Successfully created destination parent directory: {:?}",
                             self.key(),
                             destination_parent
@@ -348,13 +404,13 @@ impl Generator {
                 }
             }
         }
-        for dependency in self.dependencies.iter() {
-            dependency.copy_files(generator_values.clone())?;
+        for dependency in &self.dependencies {
+            dependency.copy_files(&generator_values.clone())?;
         }
         Ok(())
     }
 
-    pub fn collect_entities(&self) -> Value {
+    fn collect_entities(&self) -> Value {
         let mut values = self.entities.clone();
 
         for dep in &self.dependencies {
@@ -374,7 +430,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
     let response = reqwest::get(url.clone()).await.map_err(|e| {
         io::Error::new(
             ErrorKind::Other,
-            format!("Failed to download file {} due to error: {}", url, e),
+            format!("Failed to download file {url:?} due to error: {e:?}"),
         )
     })?;
 
@@ -393,14 +449,15 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
         io::Error::new(
             ErrorKind::Other,
             format!(
-                "Failed to read response bytes of file downloaded from url {} due to error: {}",
-                url, e
+                "Failed to read response bytes of file downloaded from url {url:?} due to error: {e:?}"
             ),
         )
     })?;
 
     let cursor = Cursor::new(bytes);
-    if url.to_string().ends_with(".zip") || url.to_string().ends_with(".tar.gz") {
+    if std::path::Path::new(&url.to_string())
+        .extension()
+        .map_or(false, |ext| ext.eq_ignore_ascii_case("zip")) || url.to_string().ends_with(".tar.gz") {
         let mut zip = ZipArchive::new(cursor)?;
         zip.extract(&temp_dir)?;
     }
@@ -408,8 +465,8 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
     Ok(temp_dir)
 }
 
-fn path_is_partial(filename: &String) -> bool {
-    filename.starts_with("_")
+fn path_is_partial(filename: &str) -> bool {
+    filename.starts_with('_')
 }
 
 /// Collects the templates of the generator and the generator's dependencies with the dependencies' first so that any ancestor
@@ -419,7 +476,7 @@ fn path_is_partial(filename: &String) -> bool {
 ///
 /// * `generator`:
 ///
-/// returns: HashMap<String, String>
+/// returns: `HashMap`<String, String>
 ///
 fn collect_templates(generator: &Generator) -> HashMap<String, String> {
     let mut templates: HashMap<String, String> = HashMap::new();
@@ -436,23 +493,14 @@ fn read_yaml_file<T: for<'de> Deserialize<'de>>(
     file_name: &str,
 ) -> Result<T, io::Error> {
     let file_path = base_path.join(file_name);
-    let content = fs::read_to_string(file_path.clone()).map_err(|e| {
-        io::Error::new(
-            io::ErrorKind::NotFound,
-            format!(
-                "Error reading file {:?} due to the following error:{:?}:",
-                file_path, e
-            ),
-        )
-    })?;
+    let content = fs::read_to_string(file_path.clone()).map_err(|e| 
+        io::Error::new(io::ErrorKind::NotFound, format!("Error reading file {file_path:?} due to the following error:{e:?}:"), )
+    )?;
 
     let data: T = serde_yaml::from_str(&content).map_err(|e| {
         io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!(
-                "Cannot deserialize file {:?} due to error:{:?}",
-                file_path, e
-            ),
+            io::ErrorKind::InvalidData, 
+            format!("Cannot deserialize file {file_path:?} due to error:{e:?}"),
         )
     })?;
     Ok(data)
@@ -478,10 +526,10 @@ fn read_optional_directory(base_path: &Path, dir_name: &str) -> Option<Vec<Strin
     let files: Vec<String> = glob(glob_pattern.to_str().unwrap())
         .unwrap()
         .filter_map(|x| match x {
-            Ok(path) if path.is_file() => path.to_str().map(|s| s.to_string()),
+            Ok(path) if path.is_file() => path.to_str().map(ToString::to_string),
             Ok(_) => None,
             Err(e) => {
-                eprintln!("Error: {}", e);
+                eprintln!("Error: {e:?}");
                 None
             }
         })
@@ -513,17 +561,17 @@ fn construct_destination_path(
     destination_dir: &Path,
 ) -> Result<PathBuf, io::Error> {
     let base_path = base_path.canonicalize().map_err(|e| {
-        eprintln!("Error canonicalizing base_path: {:?}", e);
+        eprintln!("Error canonicalizing base_path: {e:?}");
         e
     })?;
 
     let file = file.canonicalize().map_err(|e| {
-        eprintln!("Error canonicalizing file: {:?}", e);
+        eprintln!("Error canonicalizing file: {e:?}");
         e
     })?;
 
     let destination_file_path = file.strip_prefix(&base_path).map_err(|e| {
-        eprintln!("Error stripping prefix from file: {:?}", e);
+        eprintln!("Error stripping prefix from file: {e:?}");
         io::Error::new(io::ErrorKind::Other, "Strip prefix failed")
     })?;
     let destination = destination_dir.join(destination_file_path);
