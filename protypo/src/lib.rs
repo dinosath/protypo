@@ -126,13 +126,11 @@ impl Generator {
             debug!("Using url is filesystem path: {}", file_path);
             let path = Path::new(&file_path);
             if path.is_relative() {
-                
                 base_path.join(path)
             } else {
                 path.to_path_buf()
             }
         } else if url.scheme() == "http" || url.scheme() == "https" {
-            
             download_and_extract_to_temp(url.clone()).await?
         } else {
             return Err(io::Error::new(
@@ -186,9 +184,7 @@ impl Generator {
         let mut generator_values = self.values.clone();
         generator_values.merge(&values.clone());
 
-        if let Some(generator_obj) = values
-            .get(self.generator_yaml.name.clone())
-        {
+        if let Some(generator_obj) = values.get(self.generator_yaml.name.clone()) {
             generator_values.merge(generator_obj);
         }
         generator_values.clone()
@@ -378,11 +374,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
     let response = reqwest::get(url.clone()).await.map_err(|e| {
         io::Error::new(
             ErrorKind::Other,
-            format!(
-                "Failed to download file {} due to error: {}",
-                url,
-                e
-            ),
+            format!("Failed to download file {} due to error: {}", url, e),
         )
     })?;
 
@@ -402,8 +394,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
             ErrorKind::Other,
             format!(
                 "Failed to read response bytes of file downloaded from url {} due to error: {}",
-                url,
-                e
+                url, e
             ),
         )
     })?;
