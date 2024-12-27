@@ -1,6 +1,6 @@
 use glob::glob;
 use json_value_merge::Merge;
-use rrgen::RRgen;
+use rrgen::{Error, RRgen};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
@@ -245,16 +245,15 @@ impl Generator {
         let mut context = ctx.clone().as_object().unwrap().clone();
         context.insert("entities".to_string(), self.collect_entities());
 
-        let mut rrgen = RRgen::default();
         let templates = collect_templates(self);
-        templates
-            .iter()
-            .for_each(|(filename, template)| rrgen.add_template(filename, template).unwrap());
+        let rrgen = RRgen::with_templates(templates).map_err(|err| {
+            std::io::Error::new(std::io::ErrorKind::Other, format!("Could not initialize rrgen, due to error: {:?}", err))
+        })?;
 
-        self.generate_templates(&mut rrgen, &Value::Object(context))
+        self.generate_templates(&rrgen, &Value::Object(context))
     }
 
-    fn generate_templates(&self, rrgen: &mut RRgen, ctx: &Value) -> Result<(), io::Error> {
+    fn generate_templates(&self, rrgen: &RRgen, ctx: &Value) -> Result<(), io::Error> {
         debug!(
             "Generator name:{:?},version:{:?}, base_path {:?}",
             self.generator_yaml.name, self.generator_yaml.version, self.base_path
@@ -478,8 +477,8 @@ fn path_is_partial(filename: &str) -> bool {
 ///
 /// returns: `HashMap`<String, String>
 ///
-fn collect_templates(generator: &Generator) -> HashMap<String, String> {
-    let mut templates: HashMap<String, String> = HashMap::new();
+fn collect_templates(generator: &Generator) -> Vec<(String, String)> {
+    let mut templates: Vec<(String, String)> = Vec::new();
     for dependency in &generator.dependencies {
         let child_templates = collect_templates(dependency);
         templates.extend(child_templates);
