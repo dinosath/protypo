@@ -245,7 +245,8 @@ impl Generator {
         let mut context = ctx.clone().as_object().unwrap().clone();
         context.insert("entities".to_string(), self.collect_entities());
 
-        let templates = collect_templates(self);
+        let binding = collect_templates(self);
+        let templates: Vec<_> = binding.iter().map(|(s1, s2)| (s1.as_str(), s2.as_str())).collect();
         let rrgen = RRgen::with_templates(templates).map_err(|err| {
             std::io::Error::new(std::io::ErrorKind::Other, format!("Could not initialize rrgen, due to error: {:?}", err))
         })?;
