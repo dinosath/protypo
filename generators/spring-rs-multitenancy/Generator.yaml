@@ -1,0 +1,22 @@
+apiVersion: 0.0.1
+name: spring-rs-multitenancy
+version: 0.0.1
+description: Add multi-tenancy support to a spring-rs application
+keywords:
+  - rust
+  - spring-rs
+  - web-framework
+  - rest
+  - multi-tenancy
+dependencies:
+  - name: spring-rs
+    version: 0.0.1
+    url: "file://../spring-rs"
+    tags:
+      - seaorm
+      - rust
+sources:
+  - https://github.com/dinosath/protypo
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com

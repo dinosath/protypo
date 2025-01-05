@@ -151,7 +151,7 @@ pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(
         crate::models::{{ m2m_relation_model }}::Entity,
         crate::models::{{ m2m_relation_model }}::Column::{{ entity.title | pascal_case }}Id,
         crate::models::{{ m2m_relation_model }}::Column::{{ relation | pascal_case }}Id,
-        |{{ file_name }}_id: i32, {{ relation }}_id: i32| { crate::models::{{ m2m_relation_model }}::ActiveModel { {{ file_name }}_id: Set({{ file_name }}_id), {{ relation }}_id: Set({{ relation }}_id)}}
+        |{{ file_name }}_id: i32, {{ relation | snake_case }}_id: i32| { crate::models::{{ m2m_relation_model }}::ActiveModel { {{ file_name }}_id: Set({{ file_name }}_id), {{ relation | snake_case }}_id: Set({{ relation | snake_case }}_id)}}
     ).await.context("could not update many-to-many relation {{ name }}")?;
     {% endif -%}
     {% endfor -%}
@@ -173,7 +173,7 @@ pub async fn fetch(Component(db): Component<DbConn>, Path(id): Path<i32>,) -> Re
         {%- if macros.relation_is_many_to_many(property)=='true' -%}
         {%- set relation = macros.get_relation(property) -%}
         {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
-    model.{{ name }} = {{'Some(' if not name in entity.required }}model.find_related(crate::models::{{ relation }}::Entity).all(&db).await.context("fetch relation {{ relation }}")?.iter().map(|item| item.id).collect::<Vec<i32>>(){{ ')' if not name in entity.required }};
+    model.{{ name }} = {{'Some(' if not name in entity.required }}model.find_related(crate::models::{{ relation | snake_case }}::Entity).all(&db).await.context("fetch relation {{ relation | snake_case }}")?.iter().map(|item| item.id).collect::<Vec<i32>>(){{ ')' if not name in entity.required }};
         {% endif -%}
     {% endfor -%}
     Ok(Json(model))

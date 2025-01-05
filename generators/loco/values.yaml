@@ -3,7 +3,7 @@ rrgen:
   frontmatterSeparator: "---\n"
 
 application:
-  name: loco
+  name: app
   type: monolith
   authenticationType: jwt
 

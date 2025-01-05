@@ -288,8 +288,7 @@ impl Generator {
         }
 
         debug!(
-            "Generator name:{:?},version:{:?}",
-            self.generator_yaml.name, self.generator_yaml.version
+            "Generator name:{:?}, version:{:?}", self.generator_yaml.name, self.generator_yaml.version
         );
         if self.templates.is_empty() {
             debug!("There are no templates to generate");
@@ -299,7 +298,7 @@ impl Generator {
                 .iter()
                 .filter(|(filename, _template)| !path_is_partial(filename));
             for (filename, content) in templates_iter {
-                debug!("Generating templates for {:?}: {:?}", filename, content);
+                debug!("Generator name:{:?}, version:{:?} generating template with name: {:?}, content:{:?}, context:{:?}", self.generator_yaml.name, self.generator_yaml.version, filename, content, serde_json::to_string_pretty(ctx));
                 rrgen
                     .generate_by_template_with_name(filename, ctx)
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
@@ -421,7 +420,7 @@ impl Generator {
             let entities = dep.collect_entities();
             values.merge(&entities);
         }
-
+        debug!("collect entities generator:{:?} , entities: {:?}",self.generator_yaml.name, values);
         values.clone()
     }
 }

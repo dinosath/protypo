@@ -1,10 +1,10 @@
 apiVersion: 0.0.1
-name: loco-react-admin
+name: spring-rs-react-admin
 version: 0.0.1
-description: Code generator for rust projects using the loco framework
+description: Code generator for a fullstack application with spring-rs as the backend and react-admin as the frontend.
 keywords:
   - rust
-  - loco
+  - spring-rs
   - web-framework
   - rest
   - seaorm
@@ -12,13 +12,14 @@ keywords:
   - react-admin
   - fullstack
 dependencies:
-  - name: spring-rs
+  - name: spring-rs-multitenancy
     version: 0.0.1
-    url: "file://../spring-rs"
+    url: "file://../spring-rs-multitenancy"
     tags:
       - seaorm
       - spring-rs
       - rust
+      - multitenancy
   - name: react-admin
     version: 0.0.1
     url: "file://../react-admin"

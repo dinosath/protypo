@@ -1,0 +1,13 @@
+{# inject in controller.rs #}
+{% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
+{% for entity_name,entity in entities | items -%}
+{% set file_name = entity.title | snake_case -%}
+---
+message: "Controller `{{module_name}}` was added successfully."
+injections:
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after: "pub updated_at: DateTimeWithTimeZone,"
+  content: "pub tenant_id: i32,"
+---
+{% endfor -%}
+{% endif -%}
