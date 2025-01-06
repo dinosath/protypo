@@ -19,11 +19,11 @@ injections:
 use std::collections::HashSet;
 use anyhow::{anyhow, Error, Context};
 use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},error::Result,extractor::{Component, Path, Query},};
-use spring_sea_orm::{pagination::{Pagination, PaginationExt},DbConn, };
+use spring_sea_orm::{pagination::Pagination,DbConn, };
 use serde::{Deserialize, Serialize};
-use sea_orm::{ActiveModelTrait, ColumnTrait, ModelTrait, EntityTrait, QueryFilter, Set, IntoActiveModel, Statement, FromQueryResult};
+use sea_orm::{ActiveModelTrait, ModelTrait, EntityTrait, Set, IntoActiveModel, Statement, FromQueryResult};
 {{ macros.seaorm_prelude_imports(entity) | trim }}
-use crate::models::{{ file_name }}::{ActiveModel, Entity, Model, Column};
+use crate::models::{{ file_name }}::{ActiveModel, Entity, Model};
 use super::utils::{ListParams,update_relation_with_diff};
 
 {% if macros.has_one_to_many_relation(entity) or macros.has_many_to_many_relation(entity) -%}

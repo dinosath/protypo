@@ -5,9 +5,10 @@
 ---
 message: "Controller `{{module_name}}` was added successfully."
 injections:
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+- into: {{ values.outputFolder }}/src/models/{{ file_name }}.rs
   after: "pub updated_at: DateTimeWithTimeZone,"
-  content: "pub tenant_id: i32,"
+  content: "\tpub tenant_id: i32,"
 ---
+// Add tenant_id to the entity
 {% endfor -%}
 {% endif -%}
