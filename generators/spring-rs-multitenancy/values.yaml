@@ -2,4 +2,4 @@ application:
   multitenancy:
     enabled: true
     type: "column"
-    entity-alias: workspace
+    entity-alias: company
