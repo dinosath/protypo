@@ -17,5 +17,4 @@ tempfile = "3.10"
 tracing = "0.1"
 url = { version = "2", features = ["serde"] }
 zip = "2.2.1"
-#rrgen = { git = "https://github.com/dinosath/rrgen", branch = "mini-jinja", default-features = false, features = ["minijinja"] }
-rrgen = { path = "../../rrgen/rrgen", default-features = false, features = ["minijinja"] }
+rrgen = { git = "https://github.com/dinosath/rrgen", branch = "mini-jinja-multi-split", default-features = false, features = ["minijinja"] }
