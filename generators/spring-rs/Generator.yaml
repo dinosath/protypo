@@ -14,13 +14,6 @@ dependencies:
     tags:
       - seaorm
       - rust
-  - name: seaography
-    version: 0.0.1
-    url: "file://../seaography"
-    tags:
-      - seaography
-      - seaorm
-      - rust
 sources:
   - https://github.com/dinosath/protypo
 maintainers:
