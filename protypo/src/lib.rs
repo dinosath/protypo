@@ -1,6 +1,6 @@
 use glob::glob;
 use json_value_merge::Merge;
-use rrgen::{Error, RRgen};
+use rrgen::RRgen;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
