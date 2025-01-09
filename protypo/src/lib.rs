@@ -253,7 +253,7 @@ impl Generator {
         let rrgen = RRgen::with_templates(templates).map_err(|err| {
             std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Could not initialize rrgen, due to error: {:?}", err),
+                format!("Could not initialize rrgen, due to error: {err:?}"),
             )
         })?;
 
@@ -461,7 +461,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
     let cursor = Cursor::new(bytes);
     if std::path::Path::new(&url.to_string())
         .extension()
-        .map_or(false, |ext| ext.eq_ignore_ascii_case("zip"))
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
         || url.to_string().ends_with(".tar.gz")
     {
         let mut zip = ZipArchive::new(cursor)?;
