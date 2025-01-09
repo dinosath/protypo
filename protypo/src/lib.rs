@@ -253,7 +253,7 @@ impl Generator {
         let rrgen = RRgen::with_templates(templates).map_err(|err| {
             std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Could not initialize rrgen, due to error: {:?}", err),
+                format!("Could not initialize rrgen, due to error: {err:?}"),
             )
         })?;
 
