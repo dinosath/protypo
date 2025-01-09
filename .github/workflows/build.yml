@@ -2,8 +2,8 @@ name: Build
 on:
   push:
     paths:
-      - 'src/**'
-      - 'Cargo.toml'
+      - '**/src/**'
+      - '**/Cargo.toml'
 
 env:
   RUST_TOOLCHAIN: stable
