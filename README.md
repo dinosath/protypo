@@ -7,8 +7,6 @@
 - [Installation](#-installation)
 - [Usage](#-usage)
 - [Generators](#-generators)
-  - [Generator structure](#generator-structure)
-  - [Extending an existing generator](#-extending-an-existing-generator)
 - [Contributing](#-contributing)
 - [License](#-license)
 
