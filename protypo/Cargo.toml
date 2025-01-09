@@ -5,12 +5,6 @@ edition = "2021"
 license = "MIT"
 description = "A library for code generation using rrgen and jinja like templates."
 
-[profile.release]
-opt-level = 3
-lto = "fat"
-panic = "abort"
-strip = "symbols"
-
 [dependencies]
 futures = "0.3"
 glob = "0.3"
