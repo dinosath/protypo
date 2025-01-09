@@ -460,7 +460,8 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
 
     let cursor = Cursor::new(bytes);
     if std::path::Path::new(&url.to_string())
-        .extension().is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
         || url.to_string().ends_with(".tar.gz")
     {
         let mut zip = ZipArchive::new(cursor)?;
