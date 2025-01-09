@@ -1,6 +1,6 @@
 use glob::glob;
 use json_value_merge::Merge;
-use rrgen::{Error, RRgen};
+use rrgen::RRgen;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
@@ -246,9 +246,15 @@ impl Generator {
         context.insert("entities".to_string(), self.collect_entities());
 
         let binding = collect_templates(self);
-        let templates: Vec<_> = binding.iter().map(|(s1, s2)| (s1.as_str(), s2.as_str())).collect();
+        let templates: Vec<_> = binding
+            .iter()
+            .map(|(s1, s2)| (s1.as_str(), s2.as_str()))
+            .collect();
         let rrgen = RRgen::with_templates(templates).map_err(|err| {
-            std::io::Error::new(std::io::ErrorKind::Other, format!("Could not initialize rrgen, due to error: {:?}", err))
+            std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Could not initialize rrgen, due to error: {:?}", err),
+            )
         })?;
 
         self.generate_templates(&rrgen, &Value::Object(context))

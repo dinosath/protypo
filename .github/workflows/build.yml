@@ -2,8 +2,10 @@ name: Build
 on:
   push:
     paths:
-      - 'src/**'
-      - 'Cargo.toml'
+      - 'protypo/src/**'
+      - 'protypo/Cargo.toml'
+      - 'protypo-cli/src/**'
+      - 'protypo-cli/Cargo.toml'
 
 env:
   RUST_TOOLCHAIN: stable
