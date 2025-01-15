@@ -1,0 +1,36 @@
+{# inject tenant in controller.rs #}
+{% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
+{% set tenant_name = (values.application.multitenancy.alias | default('company')) | snake_case -%}
+{% for entity_name,entity in entities | items -%}
+{% if entity_name == tenant_name -%}{% continue -%}{% endif -%}
+{% set file_name = entity.title | snake_case -%}
+---
+message: "Controller `{{module_name}}` was injected with multitenancy changes."
+injections:
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after_all: "/api/"
+  inline: true
+  content: "{{tenant_name}}/:{{tenant_name}}_id/"
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after_all: "DbConn>,"
+  inline: true
+  content: "Path({{ tenant_name }}_id):Path<i32>,"
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after: "fn\\s+update\\(&self,"
+  inline: true
+  content: " {{ tenant_name }}_id:i32,"
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after: "fn\\s+update\\(&self,"
+  content: "\t\titem.{{ tenant_name }}_id = Set({{ tenant_name }}_id);"
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after_all: "params.update\\("
+  inline: true
+  content: "company_id, "
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  before: "GROUP BY"
+  inline: true
+  content: "WHERE {{ tenant_name }}_id = $1, \n\t\t\t\t\t"
+---
+// Add tenant_id to the entity
+{% endfor -%}
+{% endif -%}
