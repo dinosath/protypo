@@ -9,6 +9,7 @@ message: "Sql file `01_create_entities` was added successfully."
         {"type": "string", "format": "date-time", "result": "TIMESTAMPTZ"},
         {"type": "string", "format": "date", "result": "DATE"},
         {"type": "string", "format": "time", "result": "TIME"},
+        {"type": "string", "format": "email", "result": "VARCHAR"},
         {"type": "string", "result": "VARCHAR"},
         {"type": "boolean", "result": "BOOLEAN"},
         {"type": "integer", "min": 0, "max": 255, "result": "TINYINT UNSIGNED"},
@@ -85,7 +86,7 @@ CREATE TABLE {{ table_name }}(
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    {% for name, property in entity.properties | items -%}
+    {% for name, property in entity.properties | items | rejectattr('x-relationship', 'ne', 'many-to-many')-%}
     {% if macros.relation_is_many_to_many(property)=='true' -%}{% continue -%}{% endif -%}
     {% set type = get_sql_type(name,property,name in entity.required) -%}
     {{name}} {{ type }}{{ get_reference(name,property) }}{{ ',' if not loop.last }}

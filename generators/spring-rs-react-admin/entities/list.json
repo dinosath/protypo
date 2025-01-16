@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "list",
     "type": "object",
-    "order" : 1,
+    "order" : 2,
     "properties": {
         "title": {
             "type": "string",

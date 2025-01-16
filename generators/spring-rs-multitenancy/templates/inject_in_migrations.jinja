@@ -5,9 +5,8 @@
 message: "Migration script `01_create_entities.sql` was injected with multitenancy changes."
 injections:
 - into: {{ values.outputFolder }}/migrations/01_create_entities.sql
-  inline: true
   after_all: "updated_at TIMESTAMPTZ DEFAULT NOW"
-  content: "\t {{ tenant_name }}_id INTEGER, FOREIGN KEY({{ tenant_name }}_id) REFERENCES {{ tenant_name | plural | snake_case }}(id),"
+  content: "\t{{ tenant_name }}_id INTEGER,\n\tFOREIGN KEY({{ tenant_name }}_id) REFERENCES {{ tenant_name | plural | snake_case }}(id),"
 ---
 // Add tenant_id to the entity
 {% endif -%}
