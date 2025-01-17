@@ -13,23 +13,8 @@
       "type": "string"
     },
     "logo": {
-      "oneOf": [
-        {
-          "type": "string",
-          "contentEncoding": "base64",
-          "contentMediaType": "image/jpeg"
-        },
-        {
-          "type": "string",
-          "contentEncoding": "base64",
-          "contentMediaType": "image/png"
-        },
-        {
-          "type": "string",
-          "contentEncoding": "base64",
-          "contentMediaType": "image/webp"
-        }
-      ]
+      "type": "string",
+      "format": "url"
     }
   },
   "required": [

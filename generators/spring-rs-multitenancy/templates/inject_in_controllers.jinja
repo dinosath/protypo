@@ -10,7 +10,7 @@ injections:
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   after_all: "/api/"
   inline: true
-  content: "{{tenant_name}}/:{{tenant_name}}_id/"
+  content: "{{tenant_name | plural }}/:{{tenant_name}}_id/"
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   after_all: "DbConn>,"
   inline: true

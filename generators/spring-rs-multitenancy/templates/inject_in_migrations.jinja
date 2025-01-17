@@ -1,12 +1,22 @@
 {# inject tenant in migration script #}
 {% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
 {% set tenant_name = (values.application.multitenancy.alias | default('company')) | snake_case -%}
+{% set file_name = '01_create_entities.sql' -%}
 ---
-message: "Migration script `01_create_entities.sql` was injected with multitenancy changes."
+message: "Migration script `{{ file_name }}` was injected with multitenancy changes."
 injections:
-- into: {{ values.outputFolder }}/migrations/01_create_entities.sql
+- into: {{ values.outputFolder }}/migrations/{{ file_name }}
   after_all: "updated_at TIMESTAMPTZ DEFAULT NOW"
   content: "\t{{ tenant_name }}_id INTEGER,\n\tFOREIGN KEY({{ tenant_name }}_id) REFERENCES {{ tenant_name | plural | snake_case }}(id),"
+{% for entity_name,entity in entities | items | rejectattr("0","eq", tenant_name)-%}
+{% set table = entity.title | plural | snake_case -%}
+- into: {{ values.outputFolder }}/migrations/{{ file_name }}
+  after: "CREATE TRIGGER set_updated_at BEFORE UPDATE ON {{ table }}"
+  content: "CREATE POLICY tenant_isolation_policy ON {{ table }} USING ({{ tenant_name }}_id = current_setting('app.current_{{ tenant_name }}')::integer );"
+- into: {{ values.outputFolder }}/migrations/{{ file_name }}
+  after: "CREATE TRIGGER set_updated_at BEFORE UPDATE ON {{ table }}"
+  content: "ALTER TABLE {{ table }} ENABLE ROW LEVEL SECURITY;"
+{% endfor -%}
 ---
 // Add tenant_id to the entity
 {% endif -%}

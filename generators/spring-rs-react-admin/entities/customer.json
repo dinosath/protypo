@@ -14,10 +14,6 @@
       "$ref": "list.json",
       "x-relationship": "many-to-one"
     },
-    "color": {
-      "type": "string",
-      "enum": ["red", "amber", "green"]
-    },
     "items": {
       "type": "array",
       "items": {
