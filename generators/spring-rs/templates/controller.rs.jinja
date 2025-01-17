@@ -82,7 +82,7 @@ pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListPar
                     {% endif -%}
                     {%- if not loop.last -%},{%- endif -%}
                 {% endfor -%}
-                FROM {{ table_name }}
+                FROM {{ values.application.name | default('app') }}.{{ table_name }}
                 {% for name, property in entity.properties | items -%}
                     {%- if macros.relation_is_many_to_many(property)=='true' -%}
                     LEFT JOIN {{ macros.get_m2m_relation_model(entity.title,property) }} ON {{ table_name }}.id = {{ macros.get_m2m_relation_model(entity.title,property) }}.{{ file_name }}_id
