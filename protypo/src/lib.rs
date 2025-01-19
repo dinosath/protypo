@@ -318,6 +318,9 @@ impl Generator {
     /// Will return `io::Error` if an error occurs during the pipeline
     fn copy_files(&self, values: &Value) -> Result<(), io::Error> {
         let generator_values = self.get_values(values);
+        for dependency in &self.dependencies {
+            dependency.copy_files(&generator_values.clone())?;
+        }
 
         let destination_dir_str = generator_values
             .as_object()
@@ -406,9 +409,6 @@ impl Generator {
                     }
                 }
             }
-        }
-        for dependency in &self.dependencies {
-            dependency.copy_files(&generator_values.clone())?;
         }
         Ok(())
     }
