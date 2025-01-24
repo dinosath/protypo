@@ -17,7 +17,7 @@ use loco_rs::prelude::*;
 use serde::{Deserialize, Serialize};
 use axum::{debug_handler,extract::Query};
 {{ macros.seaorm_prelude_imports(entity)|trim }}
-use crate::models::entities::{{ file_name }}::{ActiveModel, Entity, Model, Column};
+use crate::models::entities::{{ file_name }}::{ActiveModel, Entity, Model};
 use super::utils::ListParams;
 
 {% if has_one_to_many_relation(entity)=='true' or has_many_to_many_relation(entity)=='true' -%}

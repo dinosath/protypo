@@ -1,5 +1,4 @@
 features:
   - rest
 application:
-  name: loco
-outputFolder: "./gen"
+  name: app

@@ -1,29 +1,25 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "customer",
+  "title": "Role",
   "type": "object",
-  "order": 3,
+  "order": 1,
   "properties": {
     "name": {
       "type": "string",
-      "maxLength": 150,
       "x-unique": true
     },
-    "list": {
-      "type": "object",
-      "$ref": "list.json",
-      "x-relationship": "many-to-one"
+    "description": {
+      "type": "string"
     },
-    "items": {
+    "users": {
       "type": "array",
       "items": {
-        "$ref": "item.json"
+        "$ref": "User.json"
       },
       "x-relationship": "many-to-many"
     }
   },
   "required": [
-    "title",
-    "checked"
+    "name"
   ]
 }

@@ -9,7 +9,10 @@ message: "Sql file `01_create_entities` was added successfully."
         {"type": "string", "format": "date-time", "result": "TIMESTAMPTZ"},
         {"type": "string", "format": "date", "result": "DATE"},
         {"type": "string", "format": "time", "result": "TIME"},
+        {"type": "string", "format": "email", "result": "VARCHAR"},
+        {"type": "string", "format": "url", "result": "VARCHAR(1024) CHECK ("~name~" ~* '^https?://')" },
         {"type": "string", "result": "VARCHAR"},
+        {"type": "string", "enum": property.enum, "result": name },
         {"type": "boolean", "result": "BOOLEAN"},
         {"type": "integer", "min": 0, "max": 255, "result": "TINYINT UNSIGNED"},
         {"type": "integer", "min": 0, "max": 65535, "result": "SMALLINT UNSIGNED"},
@@ -21,33 +24,30 @@ message: "Sql file `01_create_entities` was added successfully."
         {"type": "integer", "min": None, "max": None, "result": "BIGINT"},
         {"type": "number", "min": -3.40282347, "max": 3.40282347, "result": "FLOAT"},
         {"type": "number", "min": None, "max": None, "result": "DOUBLE"},
-        {"type": "enum", "format": None, "result": "ENUM"},
         {"type": "relationship", "format": None, "result": "BIGINT UNSIGNED"},
-        {"x-relationship": "many-to-one", "result": "INTEGER"}
+        {"type": "object", "x-relationship": "many-to-one", "result": "INTEGER"}
     ] -%}
-
-
-    {%- set found = None -%}
-    {%- for entry in sql_map -%}
-        {% set condition = property.type == entry.type and entry.format == property.format
-                                       and (min not in entry or (property.minimum or property.exclusiveMinimum) >= entry.min)
-                                       and (max not in entry or (property.maximum or property.exclusiveMaximum) <= entry.max)
-                                       and entry['x-relationship'] == property['x-relationship']
-                                       %}
-        {%- if condition -%}
-            {{ entry.result }}
-            {%- break -%}
-        {%- endif -%}
-    {%- endfor -%}
-    {%- if required %} NOT NULL{%- endif -%}
+    {%- set type = sql_map
+        | selectattr('type', 'equalto', property.type)
+        | selectattr('format', 'equalto', property.format)
+        | selectattr('min', 'equalto', property.min)
+        | selectattr('enum', 'equalto', property.enum)
+        | selectattr('max', 'equalto', property.max)
+        | selectattr('x-relationship', 'equalto', property['x-relationship'])
+        | map(attribute='result')
+        | first
+        | default('VARCHAR') -%}
+    {{ type }}{{' NOT NULL' if required }}
 {%- endfilter %}{%- endmacro -%}
 
 {%- macro get_reference(name, property) -%}{% filter trim -%}
-{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
+{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
 {%- endfilter %}{%- endmacro -%}
 
 {# generate controllers #}
 {% import "_macros.jinja" as macros -%}
+
+CREATE SCHEMA IF NOT EXISTS {{ values.application.name | default('app') }};
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -60,42 +60,42 @@ $$ LANGUAGE plpgsql;
 {% for entity_name,entity in entities | items | sort(attribute="1.order")-%}
 
 {% if entity.enum -%}
-CREATE TYPE {{ entity.name | lower }}_enum AS ENUM (
-    {% for choice in entity.enum -%}
-    '{{ choice }}'{{ "," if not loop.last }}
-    {% endfor -%}
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{{ entity.title | lower }}_enum') THEN
+        CREATE TYPE _color_enum AS ENUM ({{ "'" ~ ( entity.enum | map('string') | join("', '") ) ~ "'" }});
+    END IF;
+END $$;
 {% endif -%}
+
+{% if entity.properties -%}
 
 {% for prop_name, prop in entity.properties | items -%}
     {% if prop.enum -%}
-    CREATE TYPE {{ entity.name | lower }}_{{ prop_name | lower }}_enum AS ENUM (
-        {% for choice in prop.enum -%}
-        '{{ choice }}'{{ "," if not loop.last }}
-        {% endfor -%}
-    );
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{{prop_name | lower}}') THEN
+        CREATE TYPE {{ prop_name | lower }} AS ENUM({{ "'" ~ ( prop.enum | map('string') | join("', '") ) ~ "'" }});
+    END IF;
+END $$;
     {% endif -%}
 {% endfor -%}
 
-{% if entity.properties -%}
 {% set table_name = macros.get_table_name(entity) -%}
 DROP TABLE IF EXISTS {{ table_name }};
 
-CREATE TABLE {{ table_name }}(
+CREATE TABLE {{ values.application.name | default('app') }}.{{ table_name }}(
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    {% for name, property in entity.properties | items -%}
-    {% if macros.relation_is_many_to_many(property)=='true' -%}{% continue -%}{% endif -%}
+    {% for name, property in entity.properties | items | rejectattr("1.x-relationship","eq", "many-to-many") -%}
     {% set type = get_sql_type(name,property,name in entity.required) -%}
-    {{name}} {{ type }}{{ get_reference(name,property) }}{{ ',' if not loop.last }}
+    {{name}} {{ type }}{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}{{ ',' if not loop.last }}
     {% endfor -%}
 );
 
-CREATE TRIGGER set_updated_at
-BEFORE UPDATE ON {{ table_name }}
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON {{ values.application.name | default('app') }}.{{ table_name }} FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 {% endif -%}
 {% endfor -%}
 
@@ -103,9 +103,9 @@ EXECUTE FUNCTION update_updated_at_column();
 {% for relation in macros.get_m2m_relations(entities) | split(',')  -%}
 {% set left = relation | trim | split("_") | first  -%}
 {% set right = relation | trim | split("_") | last -%}
-CREATE TABLE {{ relation | trim }}(
+CREATE TABLE {{ values.application.name | default('app') }}.{{ relation | trim }}(
     id SERIAL PRIMARY KEY,
-    {{ left | snake_case }}_id INTEGER, FOREIGN KEY( {{ left }}_id ) REFERENCES {{ left | plural | snake_case }}(id),
-    {{ right | snake_case }}_id INTEGER, FOREIGN KEY( {{ right }}_id ) REFERENCES {{ right | plural | snake_case }}(id)
+    {{ left | snake_case }}_id INTEGER, FOREIGN KEY( {{ left }}_id ) REFERENCES {{ values.application.name | default('app') }}.{{ left | plural | snake_case }}(id),
+    {{ right | snake_case }}_id INTEGER, FOREIGN KEY( {{ right }}_id ) REFERENCES {{ values.application.name | default('app') }}.{{ right | plural | snake_case }}(id)
 );
 {% endfor -%}
