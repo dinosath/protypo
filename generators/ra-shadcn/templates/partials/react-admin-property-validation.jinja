@@ -1,0 +1,5 @@
+{%- filter trim -%}
+    {%- if 'required' in entity and name in entity.required  -%}
+        validate={[required()]}
+    {%- endif -%}
+{%- endfilter -%}

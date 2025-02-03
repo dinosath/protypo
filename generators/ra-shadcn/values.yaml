@@ -1,0 +1,3 @@
+application:
+  name: react-admin-example
+outputFolder: "./gen"

@@ -179,11 +179,8 @@ fn create_new_template(name: &str) {
         &format!("{package_dir:?}/template.html"),
         "<!-- Your template content here -->",
     );
-
-    println!("Template package '{name:?}' has been created!");
 }
 
 /// Helper function to create a file with content
 fn create_file(path: &str, _content: &str) {
-    println!("Created file: {path:?}");
 }
