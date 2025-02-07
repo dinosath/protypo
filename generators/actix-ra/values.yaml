@@ -1,0 +1,9 @@
+features:
+  - rest
+application:
+  name: app
+
+outputFolder: "./output"
+
+react-admin:
+  outputFolder: "./output/frontend"

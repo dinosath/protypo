@@ -1,0 +1,6 @@
+features:
+  - rest
+application:
+  name: app
+
+outputFolder: "./output"

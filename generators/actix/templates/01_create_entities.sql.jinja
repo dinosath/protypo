@@ -1,0 +1,111 @@
+to: {{ values.outputFolder }}/migrations/01_create_entities.sql
+message: "Sql file `01_create_entities` was added successfully."
+---
+{% import "_macros.jinja" as macros %}
+{%- macro get_sql_type(name, property, required) -%}{% filter trim -%}
+    {# Define a complex map for SQL types with type, format, min, and max #}
+    {%- set sql_map = [
+        {"type": "string", "format": "uuid", "result": "UUID"},
+        {"type": "string", "format": "date-time", "result": "TIMESTAMPTZ"},
+        {"type": "string", "format": "date", "result": "DATE"},
+        {"type": "string", "format": "time", "result": "TIME"},
+        {"type": "string", "format": "email", "result": "VARCHAR"},
+        {"type": "string", "format": "url", "result": "VARCHAR(1024) CHECK ("~name~" ~* '^https?://')" },
+        {"type": "string", "result": "VARCHAR"},
+        {"type": "string", "enum": property.enum, "result": name },
+        {"type": "boolean", "result": "BOOLEAN"},
+        {"type": "integer", "min": 0, "max": 255, "result": "TINYINT UNSIGNED"},
+        {"type": "integer", "min": 0, "max": 65535, "result": "SMALLINT UNSIGNED"},
+        {"type": "integer", "min": 0, "max": 4294967295, "result": "INT UNSIGNED"},
+        {"type": "integer", "min": 0, "max": None, "result": "BIGINT UNSIGNED"},
+        {"type": "integer", "min": None, "max": 127, "result": "TINYINT"},
+        {"type": "integer", "min": None, "max": 32767, "result": "SMALLINT"},
+        {"type": "integer", "min": None, "max": 2147483647, "result": "INT"},
+        {"type": "integer", "min": None, "max": None, "result": "BIGINT"},
+        {"type": "number", "min": -3.40282347, "max": 3.40282347, "result": "FLOAT"},
+        {"type": "number", "min": None, "max": None, "result": "DOUBLE"},
+        {"type": "relationship", "format": None, "result": "BIGINT UNSIGNED"},
+        {"type": "object", "x-relationship": "many-to-one", "result": "INTEGER"}
+    ] -%}
+    {%- set type = sql_map
+        | selectattr('type', 'equalto', property.type)
+        | selectattr('format', 'equalto', property.format)
+        | selectattr('min', 'equalto', property.min)
+        | selectattr('enum', 'equalto', property.enum)
+        | selectattr('max', 'equalto', property.max)
+        | selectattr('x-relationship', 'equalto', property['x-relationship'])
+        | map(attribute='result')
+        | first
+        | default('VARCHAR') -%}
+    {{ type }}{{' NOT NULL' if required }}
+{%- endfilter %}{%- endmacro -%}
+
+{%- macro get_reference(name, property) -%}{% filter trim -%}
+{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
+{%- endfilter %}{%- endmacro -%}
+
+{# generate controllers #}
+{% import "_macros.jinja" as macros -%}
+
+CREATE SCHEMA IF NOT EXISTS {{ values.application.name | default('app') }};
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+{% for entity_name,entity in entities | items | sort(attribute="1.order")-%}
+
+{% if entity.enum -%}
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{{ entity.title | lower }}_enum') THEN
+        CREATE TYPE _color_enum AS ENUM ({{ "'" ~ ( entity.enum | map('string') | join("', '") ) ~ "'" }});
+    END IF;
+END $$;
+{% endif -%}
+
+{% if entity.properties -%}
+
+{% for prop_name, prop in entity.properties | items -%}
+    {% if prop.enum -%}
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{{prop_name | lower}}') THEN
+        CREATE TYPE {{ prop_name | lower }} AS ENUM({{ "'" ~ ( prop.enum | map('string') | join("', '") ) ~ "'" }});
+    END IF;
+END $$;
+    {% endif -%}
+{% endfor -%}
+
+{% set table_name = macros.get_table_name(entity) -%}
+DROP TABLE IF EXISTS {{ table_name }};
+
+CREATE TABLE {{ values.application.name | default('app') }}.{{ table_name }}(
+    id SERIAL PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    {% for name, property in entity.properties | items | rejectattr("1.x-relationship","eq", "many-to-many") -%}
+    {% set type = get_sql_type(name,property,name in entity.required) -%}
+    {{name}} {{ type }}{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}{{ ',' if not loop.last }}
+    {% endfor -%}
+);
+
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON {{ values.application.name | default('app') }}.{{ table_name }} FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+{% endif -%}
+{% endfor -%}
+
+
+{% for relation in macros.get_m2m_relations(entities) | split(',')  -%}
+{% set left = relation | trim | split("_") | first  -%}
+{% set right = relation | trim | split("_") | last -%}
+CREATE TABLE {{ values.application.name | default('app') }}.{{ relation | trim }}(
+    id SERIAL PRIMARY KEY,
+    {{ left | snake_case }}_id INTEGER, FOREIGN KEY( {{ left }}_id ) REFERENCES {{ values.application.name | default('app') }}.{{ left | plural | snake_case }}(id),
+    {{ right | snake_case }}_id INTEGER, FOREIGN KEY( {{ right }}_id ) REFERENCES {{ values.application.name | default('app') }}.{{ right | plural | snake_case }}(id)
+);
+{% endfor -%}

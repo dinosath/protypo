@@ -1,0 +1,30 @@
+apiVersion: 0.0.1
+name: actix-ra
+version: 0.0.1
+description: Code generator for crud rest api using the actix-web framework for backend and react-admin for the frontend.
+keywords:
+  - rust
+  - actix-web
+  - web-framework
+  - rest
+  - fullstack
+dependencies:
+  - name: actix
+    version: 0.0.1
+    url: "file://../actix"
+    tags:
+      - web-framework
+      - rest
+      - actix-web
+      - rust
+  - name: react-admin
+    version: 0.0.1
+    url: "file://../react-admin"
+    tags:
+      - frontend
+      - react
+sources:
+  - https://github.com/dinosath/protypo
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com
