@@ -17,11 +17,9 @@ injections:
   content: "pub mod {{ file_name }};"
 ---
 use std::collections::HashSet;
-use anyhow::{anyhow, Error, Context};
-use spring_web::{get, post, put, delete,axum::response::{IntoResponse, Json},error::Result,extractor::{Component, Path, Query},};
-use spring_sea_orm::{pagination::Pagination,DbConn, };
+use actix_web::{delete, get, post, put, Responder};
 use serde::{Deserialize, Serialize};
-use sea_orm::{ActiveModelTrait, ModelTrait, EntityTrait, Set, IntoActiveModel, Statement, FromQueryResult};
+use sea_orm::{ActiveModelTrait, ModelTrait, EntityTrait, Set, IntoActiveModel, Statement, FromQueryResult, DbConn};
 {{ macros.seaorm_prelude_imports(entity) | trim }}
 use crate::models::{{ file_name }}::{ActiveModel, Entity, Model};
 use super::utils::{ListParams,update_relation_with_diff};
@@ -65,7 +63,7 @@ async fn load_item(db: &DbConn, id: i32) -> std::result::Result<Model, Error> {
 }
 
 #[get("/api/{{ entity.title | plural | kebab_case  }}")]
-pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
+pub async fn list(data: web::Data<AppState>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
     let ids = params.ids.unwrap_or_default();
     //has m2m relations:
     let sql = r#"
@@ -99,7 +97,7 @@ pub async fn list(Component(db): Component<DbConn>, Query(params): Query<ListPar
 
 
 #[post("/api/{{ entity.title | plural | kebab_case  }}")]
-pub async fn insert(Component(db): Component<DbConn>, Json(params): Json<Params>) -> Result<impl IntoResponse> {
+pub async fn insert(data: web::Data<AppState>, Json(params): Json<Params>) -> Result<impl IntoResponse> {
     let mut active_model = ActiveModel {
         ..Default::default()
     };
@@ -133,7 +131,7 @@ pub async fn insert(Component(db): Component<DbConn>, Json(params): Json<Params>
 }
 
 #[put("/api/{{ entity.title | plural | kebab_case  }}/:id")]
-pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<impl IntoResponse> {
+pub async fn update(data: web::Data<AppState>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<impl IntoResponse> {
     let model = load_item(&db, id).await?;
     let mut model = model.into_active_model();
     params.update(&mut model);
@@ -159,14 +157,14 @@ pub async fn update(Component(db): Component<DbConn>, Path(id): Path<i32>, Json(
 }
 
 #[delete("/api/{{ entity.title | plural | kebab_case  }}/:id")]
-pub async fn remove(Component(db): Component<DbConn>, Path(id): Path<i32>) -> Result<impl IntoResponse> {
+pub async fn remove(data: web::Data<AppState>, Path(id): Path<i32>) -> Result<impl IntoResponse> {
     let model = load_item(&db, id).await?;
     model.delete(&db).await.context("failed to delete model")?;
     Ok(Json(()))
 }
 
 #[get("/api/{{ entity.title | plural | kebab_case  }}/:id")]
-pub async fn fetch(Component(db): Component<DbConn>, Path(id): Path<i32>,) -> Result<impl IntoResponse> {
+pub async fn fetch(data: web::Data<AppState>, Path(id): Path<i32>,) -> Result<impl IntoResponse> {
     let mut model = load_item(&db, id).await?;
     {% for name, property in entity.properties | items -%}
         {%- if property.readOnly-%}{% continue -%}{%- endif -%}
