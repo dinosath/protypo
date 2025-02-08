@@ -12,12 +12,12 @@
 
 ## 📝 Introduction
 
-Protypo simplifies the process of generating backend code using JSON schemas, allowing you to focus on business logic and reducing repetitive tasks. It can generate code for various languages using customizable templates, making it a versatile tool for API generation, code scaffolding, and more.
+The name Protypo originates from the Greek word πρότυπο (pronounced pro-tý-po), meaning 'model', 'template', or 'pattern'. Protypo is a powerful code generator that transforms entity definitions into fully functional code, allowing you to quickly scaffold entire backend systems, APIs, and more.
 
-Protypo was built to bring the speed and flexibility of low-code tools to Rust, with the extensibility and performance expected from a modern Rust-based tool.
+Built for speed and flexibility, Protypo brings modern code generation to Rust, combining the performance of a Rust-based tool with the convenience of customizable templates for various programming languages and architectures.
 
 ## Features
-- 🚀 Supports `Tera` (default) and `MiniJinja` template engines.
+- 🚀 Supports `MiniJinja` (default) and `Tera` template engines.
 - 🛠️ Generates code based on JSON schemas for APIs, microservices, and more.
 - 📦 Customizable generators for different frameworks and programming languages.
 - 📂 Project structure designed for flexibility and scalability.
@@ -33,7 +33,7 @@ To install Protypo, follow the steps below:
 2. Install Protypo via Cargo:
 
    ```bash
-   cargo install --git https://github.com/dinosath
+   cargo install --git https://github.com/dinosath/protypo.git
    ```
 
 #### 🚀 Usage
