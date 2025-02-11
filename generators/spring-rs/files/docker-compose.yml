@@ -2,7 +2,7 @@ version: "3"
 
 services:
   postgres:
-    image: postgres:15.3-alpine
+    image: postgres:alpine
     environment:
       - POSTGRES_PASSWORD=xudjf23adj213
     volumes:

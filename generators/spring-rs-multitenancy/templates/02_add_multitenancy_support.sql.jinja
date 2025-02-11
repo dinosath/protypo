@@ -1,7 +1,6 @@
 {% set file_name = '02_add_multitenancy_support.sql' -%}
 {% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
-{% set tenant_name = (values.application.multitenancy.alias | default('company')) | snake_case -%}
-{% set schema = values.application.name | default('app') -%}
+
 to: {{ values.outputFolder }}/migrations/{{ file_name }}
 message: "Sql file `{{ file_name }}` was added successfully."
 injections:
@@ -14,25 +13,6 @@ injections:
   content: "/postgres"
 
 ---
-{% import "_macros.jinja" as macros -%}
-CREATE OR REPLACE
-    FUNCTION get_current_{{ tenant_name }}() RETURNS INTEGER AS $$ SELECT
-        NULLIF(current_setting('app.current_{{ tenant_name }}',TRUE),'')::INTEGER
-$$ LANGUAGE SQL SECURITY DEFINER;
-
-create role tenant_user noinherit login password 'password';
-GRANT USAGE ON SCHEMA {{ schema }} TO tenant_user;
-GRANT all privileges on all tables in schema {{ schema }} to tenant_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA {{ schema }} GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tenant_user;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {{ schema }} TO tenant_user;
-
-{% for entity_name,entity in entities | items | rejectattr("0","eq", tenant_name) -%}
-{% set table = entity.title | plural | snake_case -%}
-ALTER TABLE {{ schema }}.{{ table }} ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {{ schema }}.{{ table }} ADD COLUMN "{{ tenant_name }}_id" INTEGER NOT NULL DEFAULT get_current_company();
-ALTER TABLE {{ schema }}.{{ table }} ADD FOREIGN KEY ("{{ tenant_name }}_id") REFERENCES {{ schema }}.{{ tenant_name | plural | snake_case }}(id) ;
-CREATE POLICY tenant_isolation_policy ON {{ schema }}.{{ table }} USING ({{ tenant_name }}_id = get_current_{{ tenant_name }}() );
 
 
-{% endfor -%}
 {% endif -%}

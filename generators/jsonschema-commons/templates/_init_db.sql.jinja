@@ -1,6 +1,3 @@
-to: {{ values.outputFolder }}/migrations/01_create_entities.sql
-message: "Sql file `01_create_entities` was added successfully."
----
 {% import "_macros.jinja" as macros %}
 {%- macro get_sql_type(name, property, required) -%}{% filter trim -%}
     {# Define a complex map for SQL types with type, format, min, and max #}
@@ -82,9 +79,8 @@ END $$;
 {% endfor -%}
 
 {% set table_name = macros.get_table_name(entity) -%}
-DROP TABLE IF EXISTS {{ table_name }};
 
-CREATE TABLE {{ values.application.name | default('app') }}.{{ table_name }}(
+CREATE TABLE IF NOT EXISTS {{ values.application.name | default('app') }}.{{ table_name }}(
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -103,7 +99,7 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON {{ values.application.name | defa
 {% for relation in macros.get_m2m_relations(entities) | split(',')  -%}
 {% set left = relation | trim | split("_") | first  -%}
 {% set right = relation | trim | split("_") | last -%}
-CREATE TABLE {{ values.application.name | default('app') }}.{{ relation | trim }}(
+CREATE TABLE IF NOT EXISTS {{ values.application.name | default('app') }}.{{ relation | trim }}(
     id SERIAL PRIMARY KEY,
     {{ left | snake_case }}_id INTEGER, FOREIGN KEY( {{ left }}_id ) REFERENCES {{ values.application.name | default('app') }}.{{ left | plural | snake_case }}(id),
     {{ right | snake_case }}_id INTEGER, FOREIGN KEY( {{ right }}_id ) REFERENCES {{ values.application.name | default('app') }}.{{ right | plural | snake_case }}(id)

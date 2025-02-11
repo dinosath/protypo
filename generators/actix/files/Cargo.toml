@@ -5,6 +5,9 @@ authors = ["Konstantinos Athanasiou <dinosath0@gmail.com>"]
 edition = "2021"
 publish = false
 
+[workspace]
+members = ["."]
+
 [profile.release]
 codegen-units = 1
 lto = true

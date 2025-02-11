@@ -296,7 +296,7 @@ impl Generator {
             let templates_iter = self
                 .templates
                 .iter()
-                .filter(|(filename, _template)| !path_is_partial(filename));
+                .filter(|(filename, _template)| !file_is_partial(filename));
             for (filename, content) in templates_iter {
                 debug!("Generator name:{:?}, version:{:?} generating template with name: {:?}, content:{:?}, context:{:?}", self.generator_yaml.name, self.generator_yaml.version, filename, content, serde_json::to_string_pretty(ctx));
                 rrgen
@@ -470,7 +470,7 @@ async fn download_and_extract_to_temp(url: Url) -> Result<PathBuf, io::Error> {
     Ok(temp_dir)
 }
 
-fn path_is_partial(filename: &str) -> bool {
+fn file_is_partial(filename: &str) -> bool {
     filename.starts_with('_')
 }
 

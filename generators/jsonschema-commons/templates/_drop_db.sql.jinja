@@ -1,0 +1,33 @@
+{% import "_macros.jinja" as macros %}
+
+{%- macro get_reference(name, property) -%}{% filter trim -%}
+{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
+{%- endfilter %}{%- endmacro -%}
+
+
+DROP FUNCTION IF EXISTS update_updated_at_column();
+
+{% for entity_name,entity in entities | items | sort(attribute="1.order")-%}
+{% if entity.enum -%}
+DROP TYPE IF EXISTS {{ entity.title | lower }}_enum CASCADE;
+{% endif -%}
+
+{% if entity.properties -%}
+
+{% for prop_name, prop in entity.properties | items -%}
+    {% if prop.enum -%}
+DROP TYPE IF EXISTS {{prop_name | lower}} CASCADE;
+    {% endif -%}
+{% endfor -%}
+
+{% set table_name = macros.get_table_name(entity) -%}
+DROP TABLE IF EXISTS {{ table_name }};
+{% endif -%}
+{% endfor -%}
+
+{% for relation in macros.get_m2m_relations(entities) | split(',')  -%}
+{% set left = relation | trim | split("_") | first  -%}
+{% set right = relation | trim | split("_") | last -%}
+{% set table_name = values.application.name | default('app') ~ "." ~ relation | trim -%}
+DROP TABLE IF EXISTS {{ table_name }};
+{% endfor -%}
