@@ -28,7 +28,4 @@ dotenvy = "0.15"
 listenfd = "1"
 serde = { version = "1", features = ["derive"] }
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
-sea-orm = { version = "1.1.4", features = ["runtime-async-std-native-tls","with-uuid","with-chrono"] }
-chrono = { version = "0.4", features = ["serde"] }
 env_logger = "0.11"
-uuid = { version = "1.2", features = ["v4"] }

@@ -17,7 +17,8 @@ injections:
   content: "pub mod {{ file_name }};"
 ---
 use std::collections::HashSet;
-use actix_web::{delete, get, post, put, Responder};
+use actix_web::{delete, get, post, put, web, web::{Json, Path, Query}, Error, Responder, Result};
+use crate::AppState;
 use serde::{Deserialize, Serialize};
 use sea_orm::{ActiveModelTrait, ModelTrait, EntityTrait, Set, IntoActiveModel, Statement, FromQueryResult, DbConn};
 {{ macros.seaorm_prelude_imports(entity) | trim }}
@@ -58,12 +59,13 @@ impl Params {
 }
 
 async fn load_item(db: &DbConn, id: i32) -> std::result::Result<Model, Error> {
-    let item = Entity::find_by_id(id).one(db).await.context("Failed to find entity")?;
-    item.ok_or_else(|| anyhow!("Entity not found"))
+    Entity::find_by_id(id).one(db).await.expect("Failed to find entity")
+        .ok_or_else(|| actix_web::error::ErrorNotFound(format!("Item with {} not found",id)))
 }
 
 #[get("/api/{{ entity.title | plural | kebab_case  }}")]
-pub async fn list(data: web::Data<AppState>, Query(params): Query<ListParams>, pagination: Pagination,) -> Result<impl IntoResponse> {
+pub async fn list(data: web::Data<AppState>, Query(params): Query<ListParams>) -> Result<impl Responder> {
+    let db = &data.db;
     let ids = params.ids.unwrap_or_default();
     //has m2m relations:
     let sql = r#"
@@ -91,18 +93,19 @@ pub async fn list(data: web::Data<AppState>, Query(params): Query<ListParams>, p
 
     let query = Statement::from_string(sea_orm::DatabaseBackend::Postgres, sql.to_string());
 
-    let result: Vec<ResponseModel> = ResponseModel::find_by_statement(query).all(&db).await.context("cannot list customers")?;
-    Ok(Json(result))
+    let result: Vec<ResponseModel> = ResponseModel::find_by_statement(query).all(db).await.expect("cannot list customers");
+    Ok(web::Json(result))
 }
 
 
 #[post("/api/{{ entity.title | plural | kebab_case  }}")]
-pub async fn insert(data: web::Data<AppState>, Json(params): Json<Params>) -> Result<impl IntoResponse> {
+pub async fn insert(data: web::Data<AppState>, Json(params): Json<Params>) -> Result<impl Responder> {
+    let db = &data.db;
     let mut active_model = ActiveModel {
         ..Default::default()
     };
     params.update(&mut active_model);
-    let model = active_model.insert(&db).await.context("failed to insert item")?;
+    let model = active_model.insert(db).await.expect("failed to insert item");
 
     {% for name, property in entity.properties | items -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
@@ -121,21 +124,23 @@ pub async fn insert(data: web::Data<AppState>, Json(params): Json<Params>) -> Re
                     {{ file_name }}_id: Set(model.id),
                     {{ relation | snake_case }}_id: Set(id),
                 }).collect::<Vec<_>>()
-            ).exec(&db).await.context(format!("failed to insert {{ name }} [{:?}] to table {{ m2m_relation_model }}", params.{{ name }}))?;
+            ).exec(db).await.expect(format!("failed to insert {{ name }} [{:?}] to table {{ m2m_relation_model }}", params.{{ name }}).as_str());
     }
     {%- if not name in entity.required -%} } {% endif -%}
     {% endif -%}
     {% endfor %}
 
-    Ok(Json(model))
+    Ok(web::Json(model))
 }
 
-#[put("/api/{{ entity.title | plural | kebab_case  }}/:id")]
-pub async fn update(data: web::Data<AppState>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<impl IntoResponse> {
+#[put("/api/{{ entity.title | plural | kebab_case  }}/{id}")]
+pub async fn update(data: web::Data<AppState>, path: web::Path<(i32)>, Json(params): Json<Params> ) -> Result<impl Responder> {
+    let id = path.into_inner();
+    let db = &data.db;
     let model = load_item(&db, id).await?;
     let mut model = model.into_active_model();
     params.update(&mut model);
-    let model = model.update(&db).await.context("failed to update model")?;
+    let model = model.update(db).await.expect("failed to update model");
 
     {% for name, property in entity.properties | items -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
@@ -150,31 +155,35 @@ pub async fn update(data: web::Data<AppState>, Path(id): Path<i32>, Json(params)
         crate::models::{{ m2m_relation_model }}::Column::{{ entity.title | pascal_case }}Id,
         crate::models::{{ m2m_relation_model }}::Column::{{ relation | pascal_case }}Id,
         |{{ file_name }}_id: i32, {{ relation | snake_case }}_id: i32| { crate::models::{{ m2m_relation_model }}::ActiveModel { {{ file_name }}_id: Set({{ file_name }}_id), {{ relation | snake_case }}_id: Set({{ relation | snake_case }}_id)}}
-    ).await.context("could not update many-to-many relation {{ name }}")?;
+    ).await.expect("could not update many-to-many relation {{ name }}");
     {% endif -%}
     {% endfor -%}
-    Ok(Json(model))
+    Ok(web::Json(model))
 }
 
-#[delete("/api/{{ entity.title | plural | kebab_case  }}/:id")]
-pub async fn remove(data: web::Data<AppState>, Path(id): Path<i32>) -> Result<impl IntoResponse> {
+#[delete("/api/{{ entity.title | plural | kebab_case  }}/{id}")]
+pub async fn remove(data: web::Data<AppState>, path: web::Path<(i32)>) -> Result<impl Responder> {
+    let id = path.into_inner();
+    let db = &data.db;
     let model = load_item(&db, id).await?;
-    model.delete(&db).await.context("failed to delete model")?;
+    model.delete(db).await.expect("failed to delete model");
     Ok(Json(()))
 }
 
-#[get("/api/{{ entity.title | plural | kebab_case  }}/:id")]
-pub async fn fetch(data: web::Data<AppState>, Path(id): Path<i32>,) -> Result<impl IntoResponse> {
+#[get("/api/{{ entity.title | plural | kebab_case  }}/{id}")]
+pub async fn fetch(data: web::Data<AppState>, path: web::Path<(i32)>,) -> Result<impl Responder> {
+    let id = path.into_inner();
+    let db = &data.db;
     let mut model = load_item(&db, id).await?;
     {% for name, property in entity.properties | items -%}
         {%- if property.readOnly-%}{% continue -%}{%- endif -%}
         {%- if macros.relation_is_many_to_many(property)=='true' -%}
         {%- set relation = macros.get_relation(property) -%}
         {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
-    model.{{ name }} = {{'Some(' if not name in entity.required }}model.find_related(crate::models::{{ relation | snake_case }}::Entity).all(&db).await.context("fetch relation {{ relation | snake_case }}")?.iter().map(|item| item.id).collect::<Vec<i32>>(){{ ')' if not name in entity.required }};
+    model.{{ name }} = {{'Some(' if not name in entity.required }}model.find_related(crate::models::{{ relation | snake_case }}::Entity).all(db).await.expect("fetch relation {{ relation | snake_case }}").iter().map(|item| item.id).collect::<Vec<i32>>(){{ ')' if not name in entity.required }};
         {% endif -%}
     {% endfor -%}
-    Ok(Json(model))
+    Ok(web::Json(model))
 }
 ---
 {% endif -%}

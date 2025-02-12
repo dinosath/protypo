@@ -4,9 +4,7 @@ services:
   postgres:
     image: postgres:15.3-alpine
     environment:
-      - POSTGRES_PASSWORD=xudjf23adj213
-    volumes:
-      - ./migrations:/docker-entrypoint-initdb.d
+      - POSTGRES_PASSWORD=postgres123
     ports:
       - 5432:5432
   jaeger:

@@ -17,6 +17,20 @@ dependencies:
       - rest
       - actix-web
       - rust
+  - name: seaorm-entities
+    version: 0.0.1
+    url: "file://../seaorm-entities"
+    tags:
+      - seaorm
+      - rust
+      - entities
+  - name: seaorm-migration
+    version: 0.0.1
+    url: "file://../seaorm-migration"
+    tags:
+      - seaorm
+      - rust
+      - migration
   - name: react-admin
     version: 0.0.1
     url: "file://../react-admin"

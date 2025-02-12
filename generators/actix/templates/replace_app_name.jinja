@@ -1,0 +1,17 @@
+{# change app_name in all files #}
+{% set app_name= values.application.name %}
+{% if app_name -%}
+message: "Set app name to {{ app_name }}"
+injections:
+- into: {{ values.outputFolder }}/Cargo.toml
+  replace: "app_name"
+  content: "{{ app_name }}"
+- into: {{ values.outputFolder }}/Cargo.lock
+  replace: "app_name"
+  content: "{{ app_name }}"
+- into: {{ values.outputFolder }}/Dockerfile
+  replace: "app_name"
+  content: "{{ app_name }}"
+---
+// Add tenant_id to the entity
+{% endif -%}

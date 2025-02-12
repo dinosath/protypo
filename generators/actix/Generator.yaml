@@ -8,20 +8,6 @@ keywords:
   - web-framework
   - rest
 dependencies:
-  - name: seaorm-entities
-    version: 0.0.1
-    url: "file://../seaorm-entities"
-    tags:
-      - seaorm
-      - rust
-      - entities
-  - name: seaorm-migration
-    version: 0.0.1
-    url: "file://../seaorm-migration"
-    tags:
-      - seaorm
-      - rust
-      - migration
 sources:
   - https://github.com/dinosath/protypo
 maintainers:

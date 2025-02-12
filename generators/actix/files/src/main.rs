@@ -1,6 +1,7 @@
 use actix_settings::{ApplySettings, BasicSettings, Mode};
 use actix_web::middleware::{Compress, Condition, Logger};
 use actix_web::{web, App, HttpServer};
+use actix_files::Files as Fs;
 use sea_orm::{Database, DatabaseConnection};
 use serde::Deserialize;
 
@@ -9,7 +10,7 @@ mod controllers;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    conn: DatabaseConnection,
+    db: DatabaseConnection,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
@@ -39,8 +40,8 @@ impl Default for SeaOrmSettings {
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 struct AppSettings {
-    #[serde(rename = "nested-field")]
-    sea_orm_config: SeaOrmSettings,
+    #[serde(rename = "sea-orm")]
+    sea_orm: SeaOrmSettings,
 }
 
 type CustomSettings = BasicSettings<AppSettings>;
@@ -49,8 +50,8 @@ type CustomSettings = BasicSettings<AppSettings>;
 async fn main() -> std::io::Result<()> {
     let mut settings = CustomSettings::parse_toml("./config.toml").expect("Failed to parse `Settings` from config.toml");
     init_logger(&settings);
-    let conn = init_db(&settings).await.expect("Failed to initialize database");
-    let state = AppState { conn };
+    let db = init_db(&settings).await.expect("Failed to initialize database");
+    let state = AppState { db };
 
     println!("🚀 Server started successfully");
     HttpServer::new({
@@ -62,14 +63,20 @@ async fn main() -> std::io::Result<()> {
                     settings.actix.enable_compression,
                     Compress::default(),
                 ))
-                .wrap(Logger::default())
+                .service(Fs::new("/static", "./static"))
                 .app_data(web::Data::new(state.clone()))
+                .wrap(Logger::default())
+                .configure(init)
         }
     })
         .try_apply_settings(&settings)?
         .run()
         .await
 }
+
+fn init(cfg: &mut web::ServiceConfig) {
+}
+
 
 fn init_logger(settings: &CustomSettings) {
     if !settings.actix.enable_log {
@@ -87,6 +94,6 @@ fn init_logger(settings: &CustomSettings) {
 }
 
 async fn init_db(settings: &CustomSettings) -> Result<DatabaseConnection, sea_orm::DbErr> {
-    let conn = Database::connect(&settings.application.sea_orm_config.uri).await?;
+    let conn = Database::connect(&settings.application.sea_orm.uri).await?;
     Ok(conn)
 }

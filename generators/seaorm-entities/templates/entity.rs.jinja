@@ -97,16 +97,14 @@ impl Related<super::{{ relation | snake_case }}::Entity> for Entity {
     {%- endif -%}
 {%- endfor %}
 
-{% if features and 'graphql' in features -%}
+{% if values.features and 'graphql' in values.features -%}
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelatedEntity)]
 pub enum RelatedEntity {
-    {% set relations = get_all_relations(entity) | trim -%}
-    {% if relations !="" -%}
-    {% for relation in relations | split(",") -%}
+    {% for name,property in entity.properties | items | selectattr('1.x-relationship', 'in', ['many-to-many','one-to-many','many-to-one'])-%}
+    {% set relation = macros.get_relation(property) | trim -%}
     #[sea_orm(entity = "super::{{ relation | snake_case }}::Entity")]
-    {{ relation | pascal_case }}{%- if not loop.last -%},{% endif -%}
+    {{ relation | pascal_case }}{{ ',' if not loop.last }}
     {% endfor -%}
-    {% endif -%}
 }
 {% endif -%}
 
