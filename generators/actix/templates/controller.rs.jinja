@@ -15,6 +15,14 @@ injections:
 - into: {{ values.outputFolder }}/src/controllers/mod.rs
   append: true
   content: "pub mod {{ file_name }};"
+- into: {{ values.outputFolder }}/src/main.rs
+  after: "web::ServiceConfig"
+  content: |
+        cfg.service(controllers::{{ file_name }}::list);
+        cfg.service(controllers::{{ file_name }}::insert);
+        cfg.service(controllers::{{ file_name }}::update);
+        cfg.service(controllers::{{ file_name }}::remove);
+        cfg.service(controllers::{{ file_name }}::fetch);
 ---
 use std::collections::HashSet;
 use actix_web::{delete, get, post, put, web, web::{Json, Path, Query}, Error, Responder, Result};

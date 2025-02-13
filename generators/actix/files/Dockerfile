@@ -11,9 +11,8 @@ FROM alpine:latest
 WORKDIR /app
 RUN apk update && apk add openssl ca-certificates
 
-COPY --from=node-builder /usr/src/dist /app/dist
 COPY --from=builder /app/src/target/release/app_name /app/app_name
-COPY --from=builder /app/src/config /app/config
+COPY --from=builder /app/src/config.toml /app/config.toml
 
 ENTRYPOINT ["/app/app_name"]
 CMD ["start"]

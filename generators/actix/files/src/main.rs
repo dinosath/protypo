@@ -1,57 +1,43 @@
-use actix_settings::{ApplySettings, BasicSettings, Mode};
+use std::io::Error;
+use actix_settings::{ApplySettings, BasicSettings, Mode, Settings};
 use actix_web::middleware::{Compress, Condition, Logger};
 use actix_web::{web, App, HttpServer};
 use actix_files::Files as Fs;
 use sea_orm::{Database, DatabaseConnection};
 use serde::Deserialize;
-
+use settings::CustomSettings;
 mod models;
 mod controllers;
+mod settings;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
     db: DatabaseConnection,
 }
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-struct SeaOrmSettings {
-    uri: String,
-    min_connections: u32,
-    max_connections: u32,
-    acquire_timeout: u64,
-    idle_timeout: u64,
-    connect_timeout: u64,
-    enable_logging: bool,
-}
-
-impl Default for SeaOrmSettings {
-    fn default() -> Self {
-        Self {
-            uri: "postgres://root:123456@localhost:5432/pg_db".to_string(),
-            min_connections: 1,
-            max_connections: 10,
-            acquire_timeout: 30_000,
-            idle_timeout: 600_000,
-            connect_timeout: 1_800_000,
-            enable_logging: true,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-struct AppSettings {
-    #[serde(rename = "sea-orm")]
-    sea_orm: SeaOrmSettings,
-}
-
-type CustomSettings = BasicSettings<AppSettings>;
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let mut settings = CustomSettings::parse_toml("./config.toml").expect("Failed to parse `Settings` from config.toml");
     init_logger(&settings);
-    let db = init_db(&settings).await.expect("Failed to initialize database");
-    let state = AppState { db };
+    Settings::override_field_with_env_var(&mut settings.application.sea_orm.uri, "SEA_ORM_URI")?;
+    Settings::override_field_with_env_var(&mut settings.application.migration.enabled, "MIGRATION_ENABLED")?;
+    Settings::override_field_with_env_var(&mut settings.application.cache.enabled, "CACHE_ENABLED")?;
+    Settings::override_field_with_env_var(&mut settings.application.cache.url, "CACHE_URL")?;
+
+    if(settings.application.cache.enabled){
+        let redis_url = settings.application.cache.url.clone();
+        let cfg = deadpool_redis::Config::from_url(redis_url.clone());
+        let redis_pool = cfg.create_pool(Some(deadpool_redis::Runtime::Tokio1))
+            .expect(format!("Cannot create deadpool redis from url:{}",redis_url).as_str());
+        let redis_pool_data = actix_web::web::Data::new(redis_pool);
+
+        let secret_key = actix_web::cookie::Key::from(settings.secret.hmac_secret.as_bytes());
+        let redis_store = actix_session::storage::RedisSessionStore::new(redis_url.clone())
+            .await.expect("Cannot unwrap redis session.");
+    }
+
+    let db = Database::connect(&settings.application.sea_orm.uri).await.expect("Failed to initialize database");
+    let state = AppState { db:db.clone() };
 
     println!("🚀 Server started successfully");
     HttpServer::new({

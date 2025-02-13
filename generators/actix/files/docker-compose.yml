@@ -1,8 +1,16 @@
 version: "3"
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SEA_ORM_URI=postgresql://postgres:postgres123@postgres:5432/postgres
   postgres:
-    image: postgres:15.3-alpine
+    image: postgres:alpine
     environment:
       - POSTGRES_PASSWORD=postgres123
     ports:

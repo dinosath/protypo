@@ -22,6 +22,9 @@ private-key = "path/to/cert/key.pem"
 
 [application]
 
+[application.migration]
+enabled = true
+
 [application.sea-orm]
 uri = "postgres://postgres:postgres123@localhost:5432/postgres"
 min_connections = 1
