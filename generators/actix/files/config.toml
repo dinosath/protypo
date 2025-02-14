@@ -22,6 +22,14 @@ private-key = "path/to/cert/key.pem"
 
 [application]
 
+[application.otel]
+enabled = true
+url = "redis://127.0.0.1:4317"
+
+[application.cache]
+enabled = true
+url = "redis://127.0.0.1:6379"
+
 [application.migration]
 enabled = true
 

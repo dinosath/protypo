@@ -32,6 +32,12 @@ pub(crate) struct CacheSettings {
     pub(crate) url: String,
 }
 
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub(crate) struct OtelSettings {
+    pub(crate) enabled: bool,
+    pub(crate) url: String,
+}
+
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub(crate) struct MigrationSettings {
@@ -45,6 +51,7 @@ pub(crate) struct AppSettings {
     pub(crate) sea_orm: SeaOrmSettings,
     pub(crate) migration: MigrationSettings,
     pub(crate) cache: CacheSettings,
+    pub(crate) otel: OtelSettings,
 }
 
 pub(crate) type CustomSettings = BasicSettings<AppSettings>;

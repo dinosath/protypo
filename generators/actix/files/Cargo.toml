@@ -28,9 +28,16 @@ deadpool-redis = "0.19"
 tera = "1.19.0"
 dotenvy = "0.15"
 listenfd = "1"
+opentelemetry = "0.27"
+opentelemetry-otlp = { version = "0.27", features = ["grpc-tonic"] }
+opentelemetry_sdk = { version = "0.27", features = ["rt-tokio-current-thread"] }
+opentelemetry-semantic-conventions = "0.27"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["raw_value"] }
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
+tracing-actix-web = { version = "0.7", features = ["opentelemetry_0_27"] }
+tracing-bunyan-formatter = "0.3"
+tracing-opentelemetry = "0.28"
 tracing-subscriber = { version = "0.3", features = ["fmt","std","env-filter","registry",'json','tracing-log',] }
 env_logger = "0.11"

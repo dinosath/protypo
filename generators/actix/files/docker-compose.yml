@@ -9,6 +9,10 @@ services:
       - "8080:8080"
     environment:
       - SEA_ORM_URI=postgresql://postgres:postgres123@postgres:5432/postgres
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
   postgres:
     image: postgres:alpine
     environment:
