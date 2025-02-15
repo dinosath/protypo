@@ -9,10 +9,10 @@ home: The URL of this projects home page (optional)
 sources:
   - A list of URLs to source code for this project (optional)
 dependencies: # A list of the chart requirements (optional)
-  - name: jsonschema-commons
-    url: "file://../jsonschema-commons"
+  - name: commons
+    url: "file://../commons"
     version: 0.1.0
     tags: 
-      - jsonschema-commons
+      - commons
       - jsonschema
       - commons

@@ -1,12 +1,12 @@
-{% set file_name= values.outputFolder ~"/Cargo.toml" %}
-to: {{file_name}}
-message: "File `{{file_name}}` was created successfully."
----
 [package]
-name = "{{ values.application.name }}"
+name = "app_name"
 version = "0.1.0"
+authors = ["Konstantinos Athanasiou <dinosath0@gmail.com>"]
 edition = "2021"
 publish = false
+
+[workspace]
+members = ["."]
 
 [profile.release]
 codegen-units = 1
@@ -17,7 +17,8 @@ panic = "abort"
 
 [dependencies]
 anyhow = "1.0"
-sea-orm = "1.1"
+chrono = { version = "0.4", features = ["serde"] }
+sea-orm = { version = "1.1.4", features = ["sqlx-postgres","runtime-tokio-rustls","macros","with-uuid","with-chrono"] }
 serde = { version = "1", features = ["derive"] }
 spring = "0.3.0"
 spring-opentelemetry = "0.3.0"

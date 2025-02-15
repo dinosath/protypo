@@ -12,6 +12,13 @@ keywords:
   - react-admin
   - fullstack
 dependencies:
+  - name: spring-rs
+    version: 0.0.1
+    url: "file://../spring-rs"
+    tags:
+      - seaorm
+      - rust
+      - spring-rs
   - name: spring-rs-multitenancy
     version: 0.0.1
     url: "file://../spring-rs-multitenancy"

@@ -2,3 +2,6 @@ features:
   - rest
 application:
   name: app
+
+seaorm-entities:
+  inject-in-cargo: false

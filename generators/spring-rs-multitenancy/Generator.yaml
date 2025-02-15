@@ -9,12 +9,6 @@ keywords:
   - rest
   - multi-tenancy
 dependencies:
-  - name: spring-rs
-    version: 0.0.1
-    url: "file://../spring-rs"
-    tags:
-      - seaorm
-      - rust
 sources:
   - https://github.com/dinosath/protypo
 maintainers:

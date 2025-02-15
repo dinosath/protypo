@@ -31,11 +31,11 @@ Here’s an example of a generator configuration for Rust projects using the spr
 
 ```yaml
 apiVersion: v1
-name: jsonschema-commons
+name: commons
 version: 0.0.1
 description: Package containing common macros for handling jsonschema files. Use in tera templates.
 keywords:
-  - jsonschema-commons
+  - commons
   - jsonschema
   - commons
   - tera
