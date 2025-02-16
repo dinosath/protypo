@@ -6,7 +6,8 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
-            //Add your migration here
+            // inject-below (do not remove this comment)
+            // inject-above (do not remove this comment)
         ]
     }
 }

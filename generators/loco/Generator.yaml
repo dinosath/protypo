@@ -9,12 +9,20 @@ keywords:
   - rest
   - seaorm
 dependencies:
-  - name: commons
+  - name: seaorm-entities
     version: 0.0.1
-    url: "file://../commons"
-    tags: 
-      - common
-      - jsonschema
+    url: "file://../seaorm-entities"
+    tags:
+      - seaorm
+      - rust
+      - entities
+  - name: seaorm-migration
+    version: 0.0.1
+    url: "file://../seaorm-migration"
+    tags:
+      - seaorm
+      - rust
+      - migration
 sources:
   - https://github.com/dinosath/protypo
 maintainers:

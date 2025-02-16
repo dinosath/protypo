@@ -12,24 +12,11 @@ injections:
 - into: {{ values.outputFolder }}/../Cargo.toml
   after: "\\[dependencies\\]"
   content: migration = { path = "migration" }
-- into: {{ values.outputFolder }}/../src/main.rs
-  after: "let state = "
-  content: |
-        if settings.application.migration.enabled {
-            Migrator::up(&db.clone(), None)
-                .await
-                .map_err(|err| Error::new(std::io::ErrorKind::InvalidData, err))?;
-        }
-- into: {{ values.outputFolder }}/../src/main.rs
-  after: "use sea_orm::"
-  content: |
-        use migration::{Migrator, MigratorTrait};
-
 - into: {{ values.outputFolder }}/src/lib.rs
   before: "pub struct Migrator;"
   content: "mod {{ file_name }};"
 - into: {{ values.outputFolder }}/src/lib.rs
-  before: "//Add your migration here"
+  before: "// inject-above"
   content: "Box::new({{ file_name }}::Migration),"
 ---
 use sea_orm::Statement;

@@ -64,7 +64,7 @@ mailer:
 # Database Configuration
 database:
   # Database connection URI
-  uri: {{get_env(name="DATABASE_URL", default="postgres://loco:loco@localhost:5432/loco_test_test")}}
+  uri: {{get_env(name="DATABASE_URL", default="postgres://loco:loco@localhost:5432/myapp_test")}}
   # When enabled, the sql query will be logged.
   enable_logging: false
   # Set the timeout duration when acquiring a connection.
@@ -95,7 +95,7 @@ auth:
   # JWT authentication
   jwt:
     # Secret key for token generation and verification
-    secret: IE07b5xQNYk2O1i2BUlG
+    secret: XHv6x4K5Sc7lRh05emcm
     # Token expiration time in seconds
     expiration: 604800 # 7 days
 
