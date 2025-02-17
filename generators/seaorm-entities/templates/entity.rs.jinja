@@ -13,8 +13,12 @@ injections:
   append: true
   content: "pub mod {{ file_name }};"
 ---
+use bon::bon;
 use sea_orm::entity::prelude::*;
 use serde::{Serialize, Deserialize};
+use sea_orm::sea_query::{Expr, Query, Func, Alias};
+use sea_orm::{JoinType, QuerySelect};
+use sea_orm::ActiveValue::Set;
 {{ macros.enum_imports(entity) }}
 {{ macros.seaorm_prelude_imports(entity)|trim }}
 
@@ -110,6 +114,68 @@ pub enum RelatedEntity {
 
 impl ActiveModelBehavior for ActiveModel {
 }
+
+{% set m2m_relationships = entity.properties | items | selectattr('1.x-relationship', 'equalto', 'many-to-many') | map(attribute='0') -%}
+{% if m2m_relationships | length > 0 -%}
+
+#[bon]
+impl Entity {
+    pub fn select_with_relations() -> Select<Entity> {
+        Entity::find()
+            .column(Column::Id)
+            .column(Column::CreatedAt)
+            .column(Column::UpdatedAt)
+
+            {% for name, property in entity.properties | items -%}
+                {% if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}
+                {%- set relation = macros.get_relation(property) | snake_case -%}
+                {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
+
+{#
+                .join(JoinType::InnerJoin, Relation::{{ relation | pascal_case }}.def())
+                    .column_as(
+                        Expr::func(Func::coalesce(vec![
+                            Expr::func(Func::array_agg(super::{{ m2m_relation_model }}::Column::{{ entity.title | pascal_case }}Id))
+                                .filter(Expr::col(super::{{ m2m_relation_model }}::Column::{{ entity.title | pascal_case }}Id).is_not_null())
+                                .into(),
+                            Expr::val(Vec::<i32>::new()).into(),
+                        ])),
+                        Alias::new("{{ name }}"),
+                    )
+                .left_join(super::{{ m2m_relation_model }}::Entity)
+
+#}
+                .group_by(Column::Id)
+                {% else -%}
+                .column(Column::{{ name | pascal_case }})
+                {% endif -%}
+            {% endfor -%}
+    }
+
+    #[builder]
+    pub async fn insert_m2m(db: &DatabaseConnection, id:i32, {% for relation in m2m_relationships -%}{{ relation }}:Vec<i32>{{ ',' if not loop.last }}{% endfor -%}) -> Result<(), DbErr> {
+        {% for name, property in  entity.properties | items | selectattr('1.x-relationship', 'equalto', 'many-to-many')  -%}
+        {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
+        {%- set relation = macros.get_relation(property) -%}
+        if !{{ name }}.is_empty() {
+            super::{{ m2m_relation_model }}::Entity::delete_many()
+                .filter(super::{{ m2m_relation_model }}::Column::{{ entity.title | pascal_case }}Id.eq(id))
+                .filter(super::{{ m2m_relation_model }}::Column::{{ relation | pascal_case }}Id.is_not_in({{ name }}.clone()))
+                .exec(db)
+                .await?;
+
+            crate::models::{{ m2m_relation_model }}::Entity::insert_many(
+                {{ name }}.clone().into_iter().map(|relation_id| crate::models::{{ m2m_relation_model }}::ActiveModel {
+                    {{ file_name }}_id: Set(id),
+                    {{ relation | snake_case }}_id: Set(relation_id),
+                }).collect::<Vec<_>>()
+            ).exec(db).await?;
+        }
+        {% endfor -%}
+        Ok(())
+    }
+}
+{% endif -%}
 ---
-{% endif %}
+{% endif -%}
 {% endfor -%}

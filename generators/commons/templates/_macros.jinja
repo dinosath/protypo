@@ -287,16 +287,16 @@
 {%- endmacro -%}
 
 {% macro get_m21_relations_type(entity) -%}
-{% set relations = [] -%}
+{% set ns = namespace(relations=[]) %}
 {% if entity.properties | items  -%}
 {% for name, property in entity.properties | items  -%}
 {% if relation_is_many_to_one(property=property) -%}
 {% set relation = get_relation(property) -%}
-{% set relations = relations | concat(relation) -%}
+{% set ns.relations = ns.relations + [relation] -%}
 {% endif -%}
 {% endfor -%}
 {% endif -%}
-{{ relations | join(",")}}
+{{ ns.relations | join(",")}}
 {% endmacro -%}
 
 {% macro m21_relation_equal_name(name,property) -%}
