@@ -56,7 +56,7 @@ choices={[
 {%- set is_relation = macros.relation_is_many_to_many(property)=='true' or macros.relation_is_many_to_one(property=property)=='true' -%}
 {%- if is_relation -%}
 {%- set relation = macros.get_relation(property) -%}
-{{' '}}reference="{{ relation | plural | kebab_case }}" label="{{ relation | pascal_case }}"><AutocompleteInput label="{{ name }}" {% include "react-admin-property-validation.jinja" -%}/></{{ get_input_type(name, property, name in property.required) }}>
+{{' '}}reference="{{ relation | plural | kebab_case }}" label="{{ relation | pascal_case }}"><AutocompleteInput label="{{ name }}" defaultValue={[]} {% include "react-admin-property-validation.jinja" -%}/></{{ get_input_type(name, property, name in property.required) }}>
 {% else -%}
 {{- ' validate={[required()]}' if 'required' in entity and name in entity.required  }} {{ get_choices(entity) }} {{ get_choices(property) }}/>
 {% endif -%}
