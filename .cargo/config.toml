@@ -1,0 +1,2 @@
+[alias]
+fix = "fmt && clippy --fix --allow-dirty --allow-staged"
