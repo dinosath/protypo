@@ -1,0 +1,51 @@
+{# generate controllers #}
+{% import "_macros.jinja" as macros %}
+{% set file_name = "migration_00000001_init_db" -%}
+
+to: {{ values.outputFolder }}/src/{{ file_name }}.rs
+message: "Migration `{{ file_name }}.rs` was added successfully."
+injections:
+- into: {{ values.outputFolder }}/../Cargo.toml
+  after: "members = \\[\".\""
+  inline: true
+  content: ", \"migration\""
+- into: {{ values.outputFolder }}/../Cargo.toml
+  after: "\\[dependencies\\]"
+  content: migration = { path = "migration" }
+- into: {{ values.outputFolder }}/src/lib.rs
+  before: "pub struct Migrator;"
+  content: "mod {{ file_name }};"
+- into: {{ values.outputFolder }}/src/lib.rs
+  before: "// inject-above"
+  content: "Box::new({{ file_name }}::Migration),"
+---
+use sea_orm::Statement;
+use sea_orm_migration::prelude::*;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        let db = manager.get_connection();
+
+        db.execute_unprepared(
+        "
+    {% include '_init_db.sql.jinja' -%}
+        "
+        ).await?;
+
+        Ok(())
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager.get_connection()
+            .execute_unprepared("
+            {% include '_drop_db.sql.jinja' -%}
+            ")
+            .await?;
+
+        Ok(())
+    }
+}

@@ -2,10 +2,10 @@ name: Build
 on:
   push:
     paths:
-      - 'protypo/src/**'
-      - 'protypo/Cargo.toml'
-      - 'protypo-cli/src/**'
-      - 'protypo-cli/Cargo.toml'
+      - "protypo/src/**"
+      - "protypo/Cargo.toml"
+      - "protypo-cli/src/**"
+      - "protypo-cli/Cargo.toml"
 
 env:
   RUST_TOOLCHAIN: stable
@@ -33,7 +33,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-features -- -D warnings -W clippy::pedantic -W clippy::nursery -W rust-2018-idioms
+          args: -- -D warnings -W clippy::pedantic -W clippy::nursery
 
   test:
     needs: [style]

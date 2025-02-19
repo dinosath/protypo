@@ -1,1 +1,2 @@
 outputFolder: "./gen"
+inject-in-cargo: true

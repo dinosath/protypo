@@ -1,0 +1,4 @@
+features:
+  - rest
+
+outputFolder: "./output"

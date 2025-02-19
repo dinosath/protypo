@@ -5,11 +5,22 @@ edition = "2021"
 license = "MIT"
 description = "A library for code generation using rrgen and jinja like templates."
 
+[features]
+"default" = ["rrgen/minijinja"]
+"tera" = ["rrgen/tera"]
+"minijinja" = ["rrgen/minijinja"]
+
 [dependencies]
 futures = "0.3"
 glob = "0.3"
 json_value_merge = "2.0"
-reqwest = { version = "0.12", features = ["json", "gzip", "deflate", "stream", "blocking"] }
+reqwest = { version = "0.12", features = [
+    "json",
+    "gzip",
+    "deflate",
+    "stream",
+    "blocking",
+] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
@@ -17,4 +28,6 @@ tempfile = "3.10"
 tracing = "0.1"
 url = { version = "2", features = ["serde"] }
 zip = "2.2.1"
-rrgen = { git = "https://github.com/dinosath/rrgen", branch = "mini-jinja-multi-split", default-features = false, features = ["minijinja"] }
+rrgen = { git = "https://github.com/dinosath/rrgen", branch = "mini-jinja-multi-split", default-features = false, features = [
+    "minijinja",
+] }

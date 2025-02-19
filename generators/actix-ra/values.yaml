@@ -1,0 +1,14 @@
+features:
+  - rest
+application:
+
+  multitenancy:
+    enabled: true
+    type: "column"
+    entity-alias: company
+outputFolder: "./output"
+react-admin:
+  outputFolder: "./output/frontend"
+
+seaorm-migration:
+  outputFolder: "./output/migration"

@@ -34,7 +34,7 @@ pub struct ResponseModel {
     pub updated_at: DateTimeWithTimeZone,
     {% for name, property in entity.properties | items -%}
     {%- if property.writeOnly -%}{% continue -%}{%- endif -%}
-    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {{ ',' if not loop.last }}
     {% endfor %}
 }
 {% endif -%}
@@ -44,7 +44,7 @@ pub struct ResponseModel {
 pub struct Params {
     {% for name, property in entity.properties | items -%}
     {%- if property.readOnly-%}{% continue -%}{%- endif -%}
-    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {%- if not loop.last -%},{%- endif %}
+    pub {{ name | snake_case }}: {{ macros.get_type(name, property, name in entity.required) }} {{ ',' if not loop.last }}
     {% endfor %}
 }
 

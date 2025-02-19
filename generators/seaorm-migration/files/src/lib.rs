@@ -1,0 +1,13 @@
+pub use sea_orm_migration::prelude::*;
+
+pub struct Migrator;
+
+#[async_trait::async_trait]
+impl MigratorTrait for Migrator {
+    fn migrations() -> Vec<Box<dyn MigrationTrait>> {
+        vec![
+            // inject-below (do not remove this comment)
+            // inject-above (do not remove this comment)
+        ]
+    }
+}

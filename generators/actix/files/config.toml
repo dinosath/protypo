@@ -1,0 +1,43 @@
+[actix]
+
+hosts = [
+    ["0.0.0.0", 8080]
+]
+mode = "development"
+enable-compression = true
+enable-log = true
+num-workers = "default"
+backlog = "default"
+max-connections = "default"
+max-connection-rate = "default"
+keep-alive = "default"
+client-timeout = "default"
+client-shutdown = "default"
+shutdown-timeout = "default"
+
+[actix.tls]
+enabled = false
+certificate = "path/to/cert/cert.pem"
+private-key = "path/to/cert/key.pem"
+
+[application]
+
+[application.otel]
+enabled = true
+url = "redis://127.0.0.1:4317"
+
+[application.cache]
+enabled = true
+url = "redis://127.0.0.1:6379"
+
+[application.migration]
+enabled = true
+
+[application.sea-orm]
+uri = "postgres://postgres:postgres123@localhost:5432/postgres"
+min_connections = 1
+max_connections = 10
+acquire_timeout = 30000
+idle_timeout = 600000
+connect_timeout = 1800000
+enable_logging = true

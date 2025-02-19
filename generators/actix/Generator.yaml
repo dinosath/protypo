@@ -1,0 +1,29 @@
+apiVersion: 0.0.1
+name: actix
+version: 0.0.1
+description: Code generator for crud rest api using the actix-web framework
+keywords:
+  - rust
+  - actix-web
+  - web-framework
+  - rest
+dependencies:
+  - name: seaorm-entities
+    version: 0.0.1
+    url: "file://../seaorm-entities"
+    tags:
+      - seaorm
+      - rust
+      - entities
+  - name: seaorm-migration
+    version: 0.0.1
+    url: "file://../seaorm-migration"
+    tags:
+      - seaorm
+      - rust
+      - migration
+sources:
+  - https://github.com/dinosath/protypo
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com

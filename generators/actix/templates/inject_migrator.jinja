@@ -1,0 +1,17 @@
+{# inject migrator in main.rs #}
+message: "Inject migrator in main.rs"
+- into: {{ values.outputFolder }}/../src/main.rs
+  after: "let state = "
+  content: |
+        if settings.application.migration.enabled {
+            Migrator::up(&db.clone(), None)
+                .await
+                .map_err(|err| Error::new(std::io::ErrorKind::InvalidData, err))?;
+        }
+- into: {{ values.outputFolder }}/../src/main.rs
+  after: "use sea_orm::"
+  content: |
+        use migration::{Migrator, MigratorTrait};
+---
+//
+{% endif -%}

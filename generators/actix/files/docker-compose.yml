@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SEA_ORM_URI=postgresql://postgres:postgres123@postgres:5432/postgres
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+  postgres:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_PASSWORD=postgres123
+    ports:
+      - 5432:5432
+  jaeger:
+    image: jaegertracing/jaeger:2.0.0
+    ports:
+      - 5778:5778
+      - 16686:16686
+      - 4317:4317
+      - 4318:4318
+      - 14250:14250
+      - 14268:14268
+      - 9411:9411
+    environment:
+      - JAEGER_LOG_LEVEL=debug
+    command:
+      - "--set"
+      - "receivers.otlp.protocols.http.endpoint=0.0.0.0:4318"
+      - "--set"
+      - "receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317"
+    restart: unless-stopped
