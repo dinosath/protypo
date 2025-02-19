@@ -5,13 +5,24 @@ edition = "2021"
 license = "MIT"
 description = "A code generator based on rrgen using jinja like templates."
 
+[features]
+"default" = ["protypo/default"]
+"tera" = ["protypo/tera"]
+"minijinja" = ["protypo/minijinja"]
+
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 clap_derive = "4.5"
 dirs = "5.0"
 jsonptr = "0.6"
-reqwest = { version = "0.12", features = ["json", "gzip", "deflate", "stream","blocking"] }
+reqwest = { version = "0.12", features = [
+    "json",
+    "gzip",
+    "deflate",
+    "stream",
+    "blocking",
+] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
