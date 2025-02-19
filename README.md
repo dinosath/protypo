@@ -33,7 +33,7 @@ To install Protypo, follow the steps below:
 2. Install Protypo via Cargo:
 
    ```bash
-   cargo install --git https://github.com/dinosath/protypo.git
+   cargo install --git https://github.com/dinosath/protypo.git protypo-cli
    ```
 
 #### 🚀 Usage
@@ -53,9 +53,9 @@ For more info about the generators and how to create a new generator extend an e
 Contributions are welcome! If you’d like to contribute to Protypo, feel free to open issues, submit pull requests, or suggest new features.
 How to Contribute
 
-1. Fork the repository. 
-2. Create a new branch. 
-3. Make your changes. 
+1. Fork the repository.
+2. Create a new branch.
+3. Make your changes.
 4. Submit a pull request.
 
 Please ensure your contributions follow the Rust community’s best practices.
