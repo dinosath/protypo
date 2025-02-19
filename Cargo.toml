@@ -1,6 +1,6 @@
 [workspace]
-members = ["protypo","protypo-cli"]
-exclude = ["output"]
+members = ["protypo", "protypo-cli"]
+exclude = ["output/**", "generators/**"]
 resolver = "2"
 
 [profile.dev.package.insta]
