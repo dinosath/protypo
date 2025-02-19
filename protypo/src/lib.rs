@@ -288,7 +288,8 @@ impl Generator {
         }
 
         debug!(
-            "Generator name:{:?}, version:{:?}", self.generator_yaml.name, self.generator_yaml.version
+            "Generator name:{:?}, version:{:?}",
+            self.generator_yaml.name, self.generator_yaml.version
         );
         if self.templates.is_empty() {
             debug!("There are no templates to generate");
@@ -420,7 +421,10 @@ impl Generator {
             let entities = dep.collect_entities();
             values.merge(&entities);
         }
-        debug!("collect entities generator:{:?} , entities: {:?}",self.generator_yaml.name, values);
+        debug!(
+            "collect entities generator:{:?} , entities: {:?}",
+            self.generator_yaml.name, values
+        );
         values.clone()
     }
 }
