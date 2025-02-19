@@ -41,7 +41,7 @@ To install Protypo, follow the steps below:
 Protypo can be used from the command line. Run the following to generate code:
 
 ```bash
-  protypo generate -p path/to/generator
+  protypo-cli generate -p path/to/generator
 ```
 
 ### 📁 Generators
