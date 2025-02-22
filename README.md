@@ -36,7 +36,7 @@ To install Protypo, follow the steps below:
    cargo install --git https://github.com/dinosath/protypo.git protypo-cli
    ```
 
-#### 🚀 Usage
+# 🚀 Usage
 
 Protypo can be used from the command line. Run the following to generate code:
 
@@ -47,6 +47,13 @@ Protypo can be used from the command line. Run the following to generate code:
 ### 📁 Generators
 
 For more info about the generators and how to create a new generator extend an existing one. [documentation](./generators/README.md)
+
+# Project structure
+
+This project is split into multiple parts:
+
+* protypo: A code generator based on rrgen using jinja/tera with jinja like templates.
+* protypo-cli: A command-line interface (CLI) application for the Protypo project.
 
 ### 🤝 Contributing
 
@@ -63,3 +70,7 @@ Please ensure your contributions follow the Rust community’s best practices.
 ### 📄 License
 
 Protypo is licensed under the MIT License. See the LICENSE [here](./LICENSE).
+
+### Communication
+
+- Matrix: You can join the chat room [here](https://matrix.to/#/#protypo:matrix.org)
