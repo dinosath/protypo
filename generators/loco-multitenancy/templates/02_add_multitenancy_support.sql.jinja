@@ -1,0 +1,18 @@
+{% set file_name = '02_add_multitenancy_support.sql' -%}
+{% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
+
+to: {{ values.outputFolder }}/migrations/{{ file_name }}
+message: "Sql file `{{ file_name }}` was added successfully."
+injections:
+- into: {{ values.outputFolder }}/config/app.toml
+  replace: "postgres:xudjf23adj213"
+  content: "tenant_user:password"
+- into: {{ values.outputFolder }}/config/app.toml
+  after: "localhost:5432"
+  inline: true
+  content: "/postgres"
+
+---
+
+
+{% endif -%}

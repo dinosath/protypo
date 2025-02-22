@@ -1,7 +1,7 @@
+outputFolder: "./output"
 loco:
   application:
     name: app
-  outputFolder: "./output"
 react-admin:
   application:
     name: app
