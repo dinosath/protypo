@@ -1,0 +1,17 @@
+[web]
+port = 8080
+graceful = true
+
+[web.middlewares]
+compression = { enable = true }
+logger = { enable = true, level = "info" }
+catch_panic = { enable = false }
+timeout_request = { enable = true, timeout = 30000 }
+
+
+[sea-orm]
+uri = "${DATABASE_URL:postgres://postgres:postgres123@localhost:5432/postgres}"
+
+
+[logger]
+pretty_backtrace = false

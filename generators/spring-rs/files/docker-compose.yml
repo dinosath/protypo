@@ -9,8 +9,7 @@ services:
       - "8080:8080"
     environment:
       - SERVICE_NAME=app_name
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-      - OTEL_EXPORTER_OTLP_HEADERS="authorization=Basic cm9vdEBleGFtcGxlLmNvbTo5VjJGQmREbGd1NWlYOU5w,organization=default"
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
   redis:
     image: redis:alpine
     ports:
