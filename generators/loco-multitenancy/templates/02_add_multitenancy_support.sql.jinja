@@ -4,15 +4,13 @@
 to: {{ values.outputFolder }}/migrations/{{ file_name }}
 message: "Sql file `{{ file_name }}` was added successfully."
 injections:
-- into: {{ values.outputFolder }}/config/app.toml
-  replace: "postgres:xudjf23adj213"
+- into: {{ values.outputFolder }}/config/development.yaml
+  replace: "postgres:postgres"
   content: "tenant_user:password"
-- into: {{ values.outputFolder }}/config/app.toml
-  after: "localhost:5432"
-  inline: true
-  content: "/postgres"
-
+- into: {{ values.outputFolder }}/config/production.yaml
+  replace: "postgres:postgres"
+  content: "tenant_user:password"
 ---
-
+// Change config user
 
 {% endif -%}
