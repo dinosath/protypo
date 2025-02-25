@@ -540,8 +540,8 @@ fn read_optional_directory(base_path: &Path, dir_name: &str) -> Option<Vec<Strin
         .filter_map(|x| match x {
             Ok(path) if path.is_file() => path.to_str().map(ToString::to_string),
             Ok(_) => None,
-            Err(e) => {
-                eprintln!("Error: {e:?}");
+            Err(ref e) => {
+                eprintln!("Error mapping glob '{x:?}' due to: {e:?}");
                 None
             }
         })

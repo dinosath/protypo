@@ -8,7 +8,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SEA_ORM_URI=postgresql://postgres:postgres123@postgres:5432/postgres
+      - SEA_ORM_URI=postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
   redis:
     image: redis:alpine
     ports:
@@ -16,11 +16,14 @@ services:
   postgres:
     image: postgres:alpine
     environment:
-      - POSTGRES_PASSWORD=postgres123
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - 5432:5432
   jaeger:
-    image: jaegertracing/jaeger:2.0.0
+    image: jaegertracing/jaeger
     ports:
       - 5778:5778
       - 16686:16686
