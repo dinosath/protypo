@@ -21,6 +21,9 @@ injections:
 - into: {{ values.outputFolder }}/.env
   append: true
   content: "POSTGRES_PASSWORD={{ fake('Password') }}"
+- into: {{ values.outputFolder }}/.env
+  append: true
+  content: "JWT_SECRET={{ fake('Password') }}"
 ---
 // Add tenant_id to the entity
 {% endif -%}
