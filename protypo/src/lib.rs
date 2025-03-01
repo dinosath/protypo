@@ -2,7 +2,7 @@ use glob::glob;
 use json_value_merge::Merge;
 use rrgen::RRgen;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 use std::collections::HashMap;
 use std::io::{Cursor, ErrorKind};
 use std::{
@@ -299,7 +299,14 @@ impl Generator {
                 .iter()
                 .filter(|(filename, _template)| !file_is_partial(filename));
             for (filename, content) in templates_iter {
-                debug!("Generator name:{:?}, version:{:?} generating template with name: {:?}, content:{:?}, context:{:?}", self.generator_yaml.name, self.generator_yaml.version, filename, content, serde_json::to_string_pretty(ctx));
+                debug!(
+                    "Generator name:{:?}, version:{:?} generating template with name: {:?}, content:{:?}, context:{:?}",
+                    self.generator_yaml.name,
+                    self.generator_yaml.version,
+                    filename,
+                    content,
+                    serde_json::to_string_pretty(ctx)
+                );
                 rrgen
                     .generate_by_template_with_name(filename, ctx)
                     .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
@@ -382,7 +389,12 @@ impl Generator {
                             destination_parent
                         ),
                         Err(e) => {
-                            error!("{} - Failed to create destination parent directory: {:?} with error: {:?}", self.key(), destination_parent, e);
+                            error!(
+                                "{} - Failed to create destination parent directory: {:?} with error: {:?}",
+                                self.key(),
+                                destination_parent,
+                                e
+                            );
                             return Err(e);
                         }
                     }
@@ -548,11 +560,7 @@ fn read_optional_directory(base_path: &Path, dir_name: &str) -> Option<Vec<Strin
         .filter(|s| !s.is_empty())
         .collect::<Vec<String>>();
 
-    if files.is_empty() {
-        None
-    } else {
-        Some(files)
-    }
+    if files.is_empty() { None } else { Some(files) }
 }
 
 fn glob_to_map(pattern: &str) -> HashMap<String, String> {

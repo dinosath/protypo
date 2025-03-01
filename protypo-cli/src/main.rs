@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 use clap::Parser;
 use clap_derive::Subcommand;
 use jsonptr::Pointer;
