@@ -8,15 +8,12 @@
 message: "Controller `{{module_name}}` was injected with multitenancy changes."
 injections:
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after: "use super::utils::\\{"
+  inline: true
+  content: "begin_tenant_transaction, "
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   replace_all: "&db"
   content: "&txn"
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  replace: "load_item\\(db: &DbConn"
-  content: "load_item(db: &sea_orm::DatabaseTransaction"
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  after: "update_relation_with_diff"
-  inline: true
-  content: ", set_tenant"
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   after_all: "/api/"
   inline: true
@@ -27,7 +24,7 @@ injections:
   content: "Path({{ tenant_name }}_id):Path<i32>,"
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   after_all: "DbConn>,"
-  content: "\tlet txn = set_tenant(&db, company_id).await?;"
+  content: "\tlet txn = begin_tenant_transaction(&db, {{ tenant_name }}_id).await?;"
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   before_all: "Ok\\(Json\\(model\\)\\)"
   content: "\ttxn.commit().await.context(\"failed to commit transaction\")?;"

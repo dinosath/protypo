@@ -30,61 +30,50 @@ where
     }
 }
 
-pub async fn update_relation_with_diff<E, A>(
-    db: &DatabaseTransaction,
-    id: i32,
-    new_ids: HashSet<i32>,
-    entity: E,
-    id_column: E::Column,
-    relation_id_column: E::Column,
-    active_model_fn: impl Fn(i32, i32) -> A,
-) -> Result<(), DbErr>
-where
-    E: EntityTrait,
-    E::Model: Sync,
-    E::Model: ModelTrait,
-    A: ActiveModelTrait<Entity = E>,
-{
-    let existing_lists: HashSet<i32> = E::find()
-        .filter(id_column.eq(id))
-        .all(db)
-        .await?
-        .iter()
-        .filter_map(|model| {
-            match model.get(relation_id_column) {
-                Value::Int(Some(id)) => Some(id),
-                _ => None,
-            }
-        })
-        .collect::<HashSet<i32>>();
-
-    let lists_to_insert: Vec<A> = new_ids.difference(&existing_lists)
-        .map(|&related_id| active_model_fn(id, related_id))
-        .collect();
-
-    let lists_to_delete: Vec<i32> = existing_lists.difference(&existing_lists)
-        .copied()
-        .collect();
-
-    if !lists_to_insert.is_empty() {
-        E::insert_many(lists_to_insert).exec(db).await?;
-    }
-
-    if !lists_to_delete.is_empty() {
-        E::delete_many()
-            .filter(id_column.eq(id))
-            .filter(relation_id_column.is_in(lists_to_delete))
-            .exec(db)
-            .await?;
-    }
-    Ok(())
-}
-
-pub async fn set_tenant(db: &DatabaseConnection, tenant_id: i32) -> Result<DatabaseTransaction, KnownWebError> {
-    let txn = db.begin().await.map_err(|_| KnownWebError::internal_server_error("cannot create transaction"))?;
+/// Sets the tenant for the current database connection.
+///
+/// This function begins a new database transaction and sets the tenant context
+/// for the current session by executing a raw SQL statement. The tenant context
+/// is set using the `app.current_company` variable.
+///
+/// # Arguments
+///
+/// * `db` - A reference to the `DatabaseConnection` object.
+/// * `tenant_id` - The ID of the tenant to set.
+///
+/// # Returns
+///
+/// This function returns a `Result` containing a `DatabaseTransaction` object
+/// if successful, or a `DbErr` if an error occurs.
+///
+/// # Errors
+///
+/// This function will return an error if the transaction cannot be started or
+/// if the SQL statement execution fails.
+///
+/// # Examples
+///
+/// ```rust
+/// use sea_orm::DatabaseConnection;
+/// use crate::utils::set_tenant;
+///
+/// async fn example(db: &DatabaseConnection) {
+///     let tenant_id = 1;
+///     match set_tenant(db, tenant_id).await {
+///         Ok(txn) => {
+///             // Transaction started and tenant set successfully
+///         }
+///         Err(err) => {
+///             // Handle error
+///         }
+///     }
+/// }
+/// ```
+pub async fn begin_tenant_transaction(db: &DatabaseConnection, tenant_id: i32) -> Result<DatabaseTransaction, DbErr> {
+    let txn = db.begin().await?;
     let query_raw = format!("SET app.current_company = '{}';", tenant_id);
     let query = Statement::from_string(sea_orm::DatabaseBackend::Postgres, query_raw);
-    txn.execute(query).await.map_err(|_| KnownWebError::internal_server_error("cannot set app.current_company"))?;
+    txn.execute(query).await?;
 
     Ok(txn)
 }
