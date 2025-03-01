@@ -1,4 +1,4 @@
-name: Build
+name: Generator Test
 on:
   push:
     paths:
