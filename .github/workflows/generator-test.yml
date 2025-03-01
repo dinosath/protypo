@@ -1,0 +1,33 @@
+name: Build
+on:
+  push:
+    paths:
+      - "protypo/generators/**"
+
+env:
+  RUST_TOOLCHAIN: stable
+
+jobs:
+  code-generator:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: rustfmt
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: run
+          args: generate -p generators/loco-ra
+      - name: Build loco-ra
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release

@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use axum::{debug_handler,extract::Query};
 {{ macros.seaorm_prelude_imports(entity)|trim }}
 use crate::models::{{ file_name }}::{ActiveModel, Entity, Model, Column};
-use super::utils::ListParams;
+use super::utils::{ListParams};
 
 {% if macros.has_one_to_many_relation(entity)=='true' or macros.has_many_to_many_relation(entity)=='true' -%}
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -66,8 +66,11 @@ impl Params {
 }
 {% set m2m_relationships = entity.properties | items | selectattr('1.x-relationship', 'equalto', 'many-to-many') | map(attribute='0') -%}
 
-async fn load_item(ctx: &AppContext, id: i32) -> Result<Model> {
-    let item = Entity::find_by_id(id).one(&ctx.db).await?;
+async fn load_item<C>(db: &C, id: i32) -> Result<Model>
+where
+    C: ConnectionTrait,
+{
+    let item = Entity::find_by_id(id).one(db).await?;
     item.ok_or_else(|| Error::NotFound)
 }
 
@@ -105,8 +108,8 @@ pub async fn add(State(ctx): State<AppContext>, Json(params): Json<Params>) -> R
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn update(Path(id): Path<i32>, State(ctx): State<AppContext>, Json(params): Json<Params> ) -> Result<Response> {
-    let item = load_item(&ctx, id).await?;
+pub async fn update(State(ctx): State<AppContext>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<Response> {
+    let item = load_item(&ctx.db, id).await?;
     let mut item = item.into_active_model();
     params.update(&mut item);
     let item = item.update(&ctx.db).await?;
@@ -124,15 +127,15 @@ pub async fn update(Path(id): Path<i32>, State(ctx): State<AppContext>, Json(par
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn remove(Path(id): Path<i32>, State(ctx): State<AppContext>) -> Result<Response> {
-    load_item(&ctx, id).await?.delete(&ctx.db).await?;
+pub async fn remove(State(ctx): State<AppContext>, Path(id): Path<i32>) -> Result<Response> {
+    load_item(&ctx.db, id).await?.delete(&ctx.db).await?;
     format::empty()
 }
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn get_one(Path(id): Path<i32>, State(ctx): State<AppContext>) -> Result<Response> {
-    format::json(load_item(&ctx, id).await?)
+pub async fn get_one(State(ctx): State<AppContext>, Path(id): Path<i32>) -> Result<Response> {
+    format::json(load_item(&ctx.db, id).await?)
 }
 
 pub fn routes() -> Routes {

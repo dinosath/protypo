@@ -3,7 +3,6 @@ use sea_orm::QueryFilter;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, ModelTrait, Value};
 use serde::Deserialize;
 use std::collections::HashSet;
-use spring_web::error::KnownWebError;
 
 #[derive(Deserialize, Debug)]
 pub struct ListParams {
@@ -29,6 +28,7 @@ where
         None => Ok(None),
     }
 }
+
 
 /// Sets the tenant for the current database connection.
 ///

@@ -153,7 +153,10 @@ impl Entity {
     }
 
     #[builder]
-    pub async fn insert_m2m(db: &DatabaseConnection, id:i32, {% for relation in m2m_relationships -%}{{ relation }}:Vec<i32>{{ ',' if not loop.last }}{% endfor -%}) -> Result<(), DbErr> {
+    pub async fn insert_m2m<C>(db: &C, id:i32, {% for relation in m2m_relationships -%}{{ relation }}:Vec<i32>{{ ',' if not loop.last }}{% endfor -%}) -> Result<(), DbErr>
+    where
+        C: ConnectionTrait,
+    {
         {% for name, property in  entity.properties | items | selectattr('1.x-relationship', 'equalto', 'many-to-many')  -%}
         {% set m2m_relation_model = macros.get_m2m_relation_model(entity.title,property) | snake_case -%}
         {%- set relation = macros.get_relation(property) -%}

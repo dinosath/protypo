@@ -17,12 +17,9 @@ panic = "abort"
 
 [dependencies]
 anyhow = "1.0"
-chrono = { version = "0.4", features = ["serde"] }
-sea-orm = { version = "1.1.4", features = ["sqlx-postgres","runtime-tokio-rustls","macros","with-uuid","with-chrono"] }
 serde = { version = "1", features = ["derive"] }
 spring = "0.3.0"
 spring-opentelemetry = "0.3.0"
 spring-sea-orm = { version = "0.3.0", features = ["postgres","with-web",] }
 spring-web = "0.3.0"
 tokio = { version = "1.41" }
-uuid = { version = "1.10", features = ["v4","fast-rng"] }
