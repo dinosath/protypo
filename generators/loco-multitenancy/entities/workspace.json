@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Company",
+  "title": "workspace",
   "type": "object",
   "order": 0,
   "properties": {
@@ -8,6 +8,9 @@
       "type": "string",
       "maxLength": 100,
       "x-unique": true
+    },
+    "slug": {
+      "type": "string"
     },
     "description": {
       "type": "string"

@@ -4,6 +4,9 @@
   "type": "object",
   "order": 1,
   "properties": {
+    "extra_data": {
+      "type": "object"
+    },
     "username": {
       "type": "string",
       "x-unique": true
@@ -21,10 +24,6 @@
     "password": {
       "type": "string",
       "writeOnly": true
-    },
-    "apiKey": {
-      "type": "string",
-      "readOnly": true
     },
     "firstName": {
       "type": "string"
@@ -66,7 +65,6 @@
   "required": [
     "username",
     "pid",
-    "password",
-    "apiKey"
+    "password"
   ]
 }

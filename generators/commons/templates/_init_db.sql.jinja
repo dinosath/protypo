@@ -22,7 +22,9 @@
         {"type": "number", "min": -3.40282347, "max": 3.40282347, "result": "FLOAT"},
         {"type": "number", "min": None, "max": None, "result": "DOUBLE"},
         {"type": "relationship", "format": None, "result": "BIGINT UNSIGNED"},
-        {"type": "object", "x-relationship": "many-to-one", "result": "INTEGER"}
+        {"type": "object", "x-relationship": "many-to-one", "result": "INTEGER"},
+        {"type": "object", "result": "JSONB"},
+        {"type": "array", "result": (get_sql_type(name, property.items) if 'items' in property else"") ~"[]" },
     ] -%}
     {%- set type = sql_map
         | selectattr('type', 'equalto', property.type)
