@@ -1,20 +1,72 @@
-{% set tenant_name = (values.application.multitenancy.alias | default('company')) | snake_case -%}
+{% set tenant_name = (values.application.multitenancy['entity-alias'] | default('company')) | snake_case -%}
 {% set schema = values.application.name | default('app') -%}
 CREATE OR REPLACE
     FUNCTION get_current_{{ tenant_name }}() RETURNS INTEGER AS $$ SELECT
         NULLIF(current_setting('app.current_{{ tenant_name }}',TRUE),'')::INTEGER
 $$ LANGUAGE SQL SECURITY DEFINER;
 
-create role tenant_user noinherit login password 'password';
-GRANT USAGE ON SCHEMA {{ schema }} TO tenant_user;
-GRANT all privileges on all tables in schema {{ schema }} to tenant_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA {{ schema }} GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO tenant_user;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA {{ schema }} TO tenant_user;
-
 {% for entity_name,entity in entities | items | rejectattr('0','eq', tenant_name) -%}
 {% set table = entity.title | plural | snake_case -%}
 ALTER TABLE {{ schema }}.{{ table }} ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {{ schema }}.{{ table }} ADD COLUMN {{ tenant_name }}_id INTEGER NOT NULL DEFAULT get_current_company();
+ALTER TABLE {{ schema }}.{{ table }} ADD COLUMN {{ tenant_name }}_id INTEGER NOT NULL;
 ALTER TABLE {{ schema }}.{{ table }} ADD FOREIGN KEY ({{ tenant_name }}_id) REFERENCES {{ schema }}.{{ tenant_name | plural | snake_case }}(id) ;
 CREATE POLICY tenant_isolation_policy ON {{ schema }}.{{ table }} USING ({{ tenant_name }}_id = get_current_{{ tenant_name }}() );
+
+CREATE POLICY company_based_select_access
+ON {{ schema }}.{{ table }}
+FOR SELECT
+USING (
+    {{ tenant_name }}_id = (SELECT {{ tenant_name }}_id FROM users WHERE id = auth.uid())
+);
+
+CREATE POLICY company_based_insert_access
+ON {{ schema }}.{{ table }}
+FOR INSERT
+WITH CHECK (
+    {{ tenant_name }}_id = (SELECT {{ tenant_name }}_id FROM users WHERE id = auth.uid())
+);
+
+CREATE POLICY company_based_update_access
+ON {{ schema }}.{{ table }}
+FOR UPDATE
+WITH CHECK (
+    {{ tenant_name }}_id = (SELECT {{ tenant_name }}_id FROM users WHERE id = auth.uid())
+);
+
+CREATE POLICY company_based_delete_access
+ON {{ schema }}.{{ table }}
+FOR DELETE
+WITH CHECK (
+    {{ tenant_name }}_id = (SELECT {{ tenant_name }}_id FROM users WHERE id = auth.uid())
+);
+
+CREATE POLICY role_based_update_access
+ ON {{ schema }}.{{ table }}
+ FOR UPDATE
+ USING (
+     {{ tenant_name }}_id = (SELECT {{ tenant_name }}_id FROM users WHERE id = auth.uid())
+     AND (
+         user_id = auth.uid() OR
+         (SELECT role FROM users WHERE id = auth.uid()) = 'Admin'
+     )
+ )
+ WITH CHECK (
+     {{ tenant_name }}_id = (SELECT {{ tenant_name }}_id FROM users WHERE id = auth.uid())
+     AND (
+         user_id = auth.uid() OR
+         (SELECT role FROM users WHERE id = auth.uid()) = 'Admin'
+     )
+ );
+
+CREATE POLICY role_based_delete_access
+ON {{ schema }}.{{ table }}
+FOR DELETE
+USING (
+    {{ tenant_name }}_id = (SELECT {{ tenant_name }}_id FROM users WHERE id = auth.uid())
+    AND (
+        user_id = auth.uid() OR
+        (SELECT role FROM users WHERE id = auth.uid()) = 'Admin'
+    )
+);
+
 {% endfor -%}

@@ -14,7 +14,7 @@ injections:
   append: true
   content: "pub mod {{ file_name }};"
 - into: {{ values.outputFolder }}/src/app.rs
-  after: "AppRoutes::with_default_routes"
+  after: "// controller routes below"
   content: "\t\t\t.add_route(controllers::{{ file_name }}::routes())"
 ---
 #![allow(clippy::missing_errors_doc)]

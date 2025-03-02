@@ -40,7 +40,7 @@
 {%- endfilter %}{%- endmacro -%}
 
 {%- macro get_reference(name, property) -%}{% filter trim -%}
-{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}
+{{ ',CONSTRAINT fk_' ~ name ~ ' FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id) ON DELETE CASCADE ON UPDATE CASCADE' if macros.relation_is_many_to_one(property)=='true' }}
 {%- endfilter %}{%- endmacro -%}
 
 {# generate controllers #}
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS {{ values.application.name | default('app') }}.{{ tab
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     {% for name, property in entity.properties | items | rejectattr("1.x-relationship","eq", "many-to-many") -%}
     {% set type = get_sql_type(name,property,name in entity.required) -%}
-    {{name}} {{ type }}{{ ',FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id)' if macros.relation_is_many_to_one(property)=='true' }}{{ ',' if not loop.last }}
+    {{name}} {{ type }}{{ ',\n CONSTRAINT fk_'~name~' FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id) ON DELETE CASCADE ON UPDATE CASCADE' if macros.relation_is_many_to_one(property)=='true' }}{{ ',' if not loop.last }}
     {% endfor -%}
 );
 

@@ -53,13 +53,6 @@
       "type": "string",
       "format": "date-time",
       "readOnly": true
-    },
-    "roles": {
-      "type": "array",
-      "items": {
-        "$ref": "Role.json"
-      },
-      "x-relationship": "many-to-many"
     }
   },
   "required": [

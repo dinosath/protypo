@@ -8,13 +8,13 @@ server:
   host: {{ get_env(name="SERVER_HOST", default="http://localhost") }}
   middlewares:
     static:
-      enable: true
-      must_exist: true
+      enable: {{ get_env(name="MIDDLEWARE_STATIC_ENABLED", default="false") }}
+      must_exist: {{ get_env(name="MIDDLEWARE_STATIC_MUST_EXIST", default="false") }}
       precompressed: false
       folder:
-        uri: "/"
-        path: "frontend/dist"
-      fallback: "frontend/dist/index.html"
+        uri: {{ get_env(name="MIDDLEWARE_STATIC_FOLDER_URI", default="/") }}
+        path: {{ get_env(name="MIDDLEWARE_STATIC_FOLDER_PATH", default="frontend/dist") }}
+      fallback: {{ get_env(name="MIDDLEWARE_STATIC_FALLBACK", default="frontend/dist/index.html") }}
 workers:
   mode: BackgroundAsync
 mailer:

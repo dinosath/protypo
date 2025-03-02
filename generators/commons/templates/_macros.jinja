@@ -97,10 +97,10 @@
             {"type": "number", "min": -3.40282347, "max": 3.40282347, "result": "f32"},
             {"type": "number", "min": None, "max": None, "result": "f64"},
             {"type": "enum", "format": None, "result": name | pascal_case },
-            {"type": "object", "result": "serde_json::Value" },
             {"x-relationship": "many-to-one", "result": "i32" },
             {"x-relationship": "one-to-many", "result": "Vec<i32>" },
             {"x-relationship": "many-to-many", "result": "Vec<i32>" },
+            {"type": "object", "result": "serde_json::Value" },
             {"type": "array", "result": "Vec<"~ (get_type(name, property.items,true) if 'items' in property) ~">" },
             ] -%}
     {%- set type = 'None' -%}

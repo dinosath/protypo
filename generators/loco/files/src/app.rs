@@ -40,14 +40,13 @@ impl Hooks for App {
     }
 
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
-        Ok(vec![Box::new(
-            initializers::view_engine::ViewEngineInitializer,
-        )])
+        Ok(vec![
+        ])
     }
 
     fn routes(_ctx: &AppContext) -> AppRoutes {
-        AppRoutes::with_default_routes() // controller routes below
-            .add_route(controllers::auth::routes())
+        AppRoutes::with_default_routes()
+            .add_route(controllers::auth::routes()) // controller routes below
     }
 
     async fn connect_workers(ctx: &AppContext, queue: &Queue) -> Result<()> {
