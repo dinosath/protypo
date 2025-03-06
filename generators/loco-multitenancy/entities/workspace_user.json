@@ -16,6 +16,9 @@
       "type": "object",
       "$ref": "user.json",
       "x-relationship": "many-to-one"
+    },
+    "active": {
+      "type": "boolean"
     }
   },
   "required": [

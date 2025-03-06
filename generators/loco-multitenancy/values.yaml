@@ -3,3 +3,5 @@ application:
     enabled: true
     type: "column"
     entity-alias: workspace
+    skip-injection-for-models:
+    - user

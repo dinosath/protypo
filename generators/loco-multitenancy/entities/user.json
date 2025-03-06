@@ -25,6 +25,10 @@
       "type": "string",
       "writeOnly": true
     },
+    "apiKey": {
+      "type": "string",
+      "x-unique": true
+    },
     "firstName": {
       "type": "string"
     },
@@ -53,9 +57,18 @@
       "type": "string",
       "format": "date-time",
       "readOnly": true
+    },
+    "magicLinkToken": {
+      "type": "string"
+    },
+    "magicLinkExpiration": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
+    "apiKey",
+    "email",
     "username",
     "pid",
     "password"

@@ -12,6 +12,7 @@ ALTER TABLE {{ schema }}.{{ table }} ADD COLUMN {{ tenant_name }}_id INTEGER NOT
 ALTER TABLE {{ schema }}.{{ table }} ADD FOREIGN KEY ({{ tenant_name }}_id) REFERENCES {{ schema }}.{{ tenant_name | plural | snake_case }}(id) ;
 CREATE POLICY tenant_isolation_policy ON {{ schema }}.{{ table }} USING ({{ tenant_name }}_id = get_current_{{ tenant_name }}() );
 
+/*
 CREATE POLICY company_based_select_access
 ON {{ schema }}.{{ table }}
 FOR SELECT
@@ -68,5 +69,7 @@ USING (
         (SELECT role FROM users WHERE id = auth.uid()) = 'Admin'
     )
 );
+
+*/
 
 {% endfor -%}
