@@ -5,7 +5,7 @@ CREATE OR REPLACE
         NULLIF(current_setting('app.current_{{ tenant_name }}',TRUE),'')::INTEGER
 $$ LANGUAGE SQL SECURITY DEFINER;
 
-{% for entity_name,entity in entities | items | rejectattr('0','eq', tenant_name) -%}
+{% for entity_name,entity in entities | items | rejectattr('0','eq', tenant_name) | rejectattr('0','in', values.application.multitenancy['skip-injection-for-models']) -%}
 {% set table = entity.title | plural | snake_case -%}
 ALTER TABLE {{ schema }}.{{ table }} ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {{ schema }}.{{ table }} ADD COLUMN {{ tenant_name }}_id INTEGER NOT NULL;

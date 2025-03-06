@@ -6,9 +6,9 @@
         {"type": "string", "format": "date-time", "result": "TIMESTAMPTZ"},
         {"type": "string", "format": "date", "result": "DATE"},
         {"type": "string", "format": "time", "result": "TIME"},
-        {"type": "string", "format": "email", "result": "VARCHAR"},
+        {"type": "string", "format": "email", "result": "VARCHAR(255)"},
         {"type": "string", "format": "url", "result": "VARCHAR(1024) CHECK ("~name~" ~* '^https?://')" },
-        {"type": "string", "result": "VARCHAR"},
+        {"type": "string", "result": "VARCHARVARCHAR(255)"},
         {"type": "string", "enum": property.enum, "result": name },
         {"type": "boolean", "result": "BOOLEAN"},
         {"type": "integer", "min": 0, "max": 255, "result": "TINYINT UNSIGNED"},
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS {{ values.application.name | default('app') }}.{{ tab
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     {% for name, property in entity.properties | items | rejectattr("1.x-relationship","eq", "many-to-many") -%}
     {% set type = get_sql_type(name,property,name in entity.required) -%}
-    {{name}} {{ type }}{{ ',\n CONSTRAINT fk_'~name~' FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id) ON DELETE CASCADE ON UPDATE CASCADE' if macros.relation_is_many_to_one(property)=='true' }}{{ ',' if not loop.last }}
+    {{ name | snake_case }} {{ type }}{{ ',\n CONSTRAINT fk_'~name~' FOREIGN KEY( ' ~ name ~' ) REFERENCES ' ~ values.application.name | default('app') ~'.'~ macros.get_relation(property) | plural | snake_case ~ '(id) ON DELETE CASCADE ON UPDATE CASCADE' if macros.relation_is_many_to_one(property)=='true' }}{{ ',' if not loop.last }}
     {% endfor -%}
 );
 

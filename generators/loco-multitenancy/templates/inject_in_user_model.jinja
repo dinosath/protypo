@@ -48,7 +48,7 @@ injections:
           #[validate(custom(function = "validation::is_valid_email"))]
           pub email: String,
           pub password: String,
-          pub name: String,
+          pub username: String,
       }
 
       #[derive(Debug, Validate, Deserialize)]
@@ -248,6 +248,7 @@ injections:
               let password_hash =
                   hash::hash_password(&params.password).map_err(|e| ModelError::Any(e.into()))?;
               let user = ActiveModel {
+                  username: ActiveValue::set(params.username.to_string()),
                   email: ActiveValue::set(params.email.to_string()),
                   password: ActiveValue::set(password_hash),
                   ..Default::default()

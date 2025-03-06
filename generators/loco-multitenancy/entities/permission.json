@@ -10,7 +10,7 @@
         "type": "string"
       }
     },
-    "user": {
+    "app_user": {
       "type": "object",
       "$ref": "user.json",
       "x-relationship": "many-to-one"
