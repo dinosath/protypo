@@ -1,3 +1,5 @@
+use myapp::services::healthcheck::MyHealthCheck;
+use myapp::services::healthcheck::healthcheck::health_check_server::HealthCheckServer;
 use tonic::transport::Server;
 
 #[tokio::main]
@@ -7,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Server listening on {}", addr);
 
     Server::builder()
-        .add_service(GreeterServer::new(greeter))
+        .add_service(HealthCheckServer::new(MyHealthCheck::default()))
         .serve(addr)
         .await?;
 
