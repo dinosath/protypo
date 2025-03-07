@@ -8,7 +8,7 @@
         {"type": "string", "format": "time", "result": "TIME"},
         {"type": "string", "format": "email", "result": "VARCHAR(255)"},
         {"type": "string", "format": "url", "result": "VARCHAR(1024) CHECK ("~name~" ~* '^https?://')" },
-        {"type": "string", "result": "VARCHARVARCHAR(255)"},
+        {"type": "string", "result": "VARCHAR(255)"},
         {"type": "string", "enum": property.enum, "result": name },
         {"type": "boolean", "result": "BOOLEAN"},
         {"type": "integer", "min": 0, "max": 255, "result": "TINYINT UNSIGNED"},
