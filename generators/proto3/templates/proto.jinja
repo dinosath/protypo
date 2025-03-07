@@ -1,0 +1,53 @@
+{# generate protobuf files #}
+{% import "_proto_macros.jinja" as macros %}
+{% for entity_name,entity in entities | items -%}
+{% if entity.properties | items %}
+{% set file_name = entity.title | snake_case -%}
+{% set message = entity.title | pascal_case -%}
+---
+to: {{ values.outputFolder }}/proto/{{ file_name }}.proto
+message: "Proto file for `{{module_name}}` was created successfully."
+---
+syntax = "proto3";
+
+package app_name;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+{% for name,property in entity.properties | items | selectattr('1.enum') -%}
+enum {{ name | pascal_case }} {
+        {% for enum in property.enum -%}
+        {{ enum }} = {{ loop.index - 1 }};
+        {% endfor %}
+}
+{% endfor -%}
+
+message {{ message }}Repo {
+    message {{ message }} {
+        uint64 ID = 1;
+        google.protobuf.Timestamp createdAt = 2;
+        google.protobuf.Timestamp updatedAt = 3;
+        {% for name, property in entity.properties | items -%}
+        {{ macros.get_proto_type(name, property, name in entity.required) }} {{ name | pascal_case }} = {{ loop.index + 3 }};
+        {% endfor -%}
+    }
+    repeated {{ message }} {{ message | plural | snake_case }} = 1;
+}
+
+message UpdateRequest {
+    google.protobuf.Int64Value ID = 1;
+    {{ message }}Repo.{{ message }} {{ message | snake_case }} = 2;
+}
+
+service CRUD {
+	rpc Create({{ message }}Repo.{{ message }}) returns ({{ message }}Repo.{{ message }});
+    rpc GetList(google.protobuf.Empty) returns (stream {{ message }}Repo.{{ message }});
+    rpc GetOne(google.protobuf.Int64Value) returns ({{ message }}Repo.{{ message }});
+	rpc Update(UpdateRequest) returns ({{ message }}Repo.{{ message }});
+	rpc Delete(google.protobuf.Int64Value) returns (google.protobuf.BoolValue);
+}
+---
+{% endif -%}
+{% endfor -%}

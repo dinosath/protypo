@@ -1,0 +1,24 @@
+[package]
+name = "myapp"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[profile.release]
+codegen-units = 1
+lto = true
+strip = true
+debug = false
+panic = "abort"
+
+[dependencies]
+tokio = { version = "1.43", features = ["rt-multi-thread", "macros"] }
+prost = "0.13"
+tonic = { version = "0.12" }
+# Optional dependencies
+tonic-web = "0.12"
+tonic-health = "0.12"
+tonic-reflection = "0.12"
+
+[build-dependencies]
+tonic-build = { version = "0.12", features = ["prost"] }

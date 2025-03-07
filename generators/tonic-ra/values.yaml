@@ -1,0 +1,4 @@
+outputFolder: "../grpc-fullstack"
+
+react-admin:
+  outputFolder: "../grpc-fullstack/frontend"

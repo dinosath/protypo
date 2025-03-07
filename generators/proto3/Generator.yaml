@@ -1,0 +1,21 @@
+apiVersion: 0.0.1
+name: proto3
+version: 0.0.1
+description: Generator for proto3 files for crud operations
+keywords:
+  - rust
+  - protobuf
+  - web-framework
+  - protocol-buffers
+dependencies:
+  - name: commons
+    version: 0.0.1
+    url: "file://../commons"
+    tags:
+      - common
+      - jsonschema
+sources:
+  - https://github.com/dinosath/protypo
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com

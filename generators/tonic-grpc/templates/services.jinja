@@ -1,0 +1,45 @@
+{# generate protobuf files #}
+{% import "_proto_macros.jinja" as macros %}
+{% for entity_name,entity in entities | items -%}
+{% if entity.properties | items %}
+{% set file_name = entity.title | snake_case -%}
+{% set message = entity.title | pascal_case -%}
+---
+to: {{ values.outputFolder }}/src/services/{{ file_name }}.rs
+message: "Proto file for `{{module_name}}` was created successfully."
+injections:
+- into: {{ values.outputFolder }}/build.rs
+  before: "//Inject proto files"
+  content: |
+    tonic_build::compile_protos("proto/{{ file_name }}.proto")?;
+---
+use {{ file_name }}::crud_server::{Crud, CrudServer};
+
+pub mod {{ file_name }} {
+    tonic::include_proto!("{{ file_name }}");
+}
+
+
+
+#[derive(Debug, Default)]
+pub struct MyCrud {}
+
+#[tonic::async_trait]
+impl Crud for MyCrud {
+    async fn say_hello(
+        &self,
+        request: Request<HelloRequest>, // Accept request of type HelloRequest
+    ) -> Result<Response<HelloReply>, Status> { // Return an instance of type HelloReply
+        println!("Got a request: {:?}", request);
+
+        let reply = HelloReply {
+            message: format!("Hello {}!", request.into_inner().name), // We must use .into_inner() as the fields of gRPC requests and responses are private
+        };
+
+        Ok(Response::new(reply)) // Send back our formatted greeting
+    }
+}
+
+---
+{% endif -%}
+{% endfor -%}

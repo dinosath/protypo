@@ -1,0 +1,36 @@
+{%- macro get_proto_type(name, property, required) -%}{% filter trim -%}
+    {# Define a complex map for Protobuf types with type, format, min, and max #}
+    {%- set proto_map = [
+        {"type": "string", "format": "uuid", "result": "string"},
+        {"type": "string", "format": "date-time", "result": "google.protobuf.Timestamp"},
+        {"type": "string", "format": "date", "result": "string"},
+        {"type": "string", "format": "time", "result": "string"},
+        {"type": "string", "format": "email", "result": "string"},
+        {"type": "string", "format": "url", "result": "string"},
+        {"type": "string", "result": "string"},
+        {"type": "string", "enum": property.enum, "result": name|pascal_case},
+        {"type": "boolean", "result": "bool"},
+        {"type": "integer", "min": 0, "max": 255, "result": "uint32"},
+        {"type": "integer", "min": 0, "max": 65535, "result": "uint32"},
+        {"type": "integer", "min": 0, "max": 4294967295, "result": "uint32"},
+        {"type": "integer", "min": None, "max": 127, "result": "int32"},
+        {"type": "integer", "min": None, "max": 32767, "result": "int32"},
+        {"type": "integer", "min": None, "max": 2147483647, "result": "int32"},
+        {"type": "integer", "min": None, "max": None, "result": "int64"},
+        {"type": "number", "min": -3.40282347, "max": 3.40282347, "result": "float"},
+        {"type": "number", "min": None, "max": None, "result": "double"},
+        {"type": "relationship", "format": None, "result": "int64"},
+        {"type": "object", "x-relationship": "many-to-one", "result": "int32"}
+    ] -%}
+    {%- set type = proto_map
+        | selectattr('type', 'equalto', property.type)
+        | selectattr('format', 'equalto', property.format)
+        | selectattr('min', 'equalto', property.min)
+        | selectattr('enum', 'equalto', property.enum)
+        | selectattr('max', 'equalto', property.max)
+        | selectattr('x-relationship', 'equalto', property['x-relationship'])
+        | map(attribute='result')
+        | first
+        | default('string') -%}
+    {{ type }}
+{%- endfilter %}{%- endmacro -%}

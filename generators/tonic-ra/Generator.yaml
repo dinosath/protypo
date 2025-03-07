@@ -1,0 +1,33 @@
+apiVersion: 0.0.1
+name: tonic-grpc
+version: 0.0.1
+description: Generator for crud grpc services using tonic
+keywords:
+  - rust
+  - grpc
+  - protobuf
+  - web-framework
+  - protocol-buffers
+dependencies:
+  - name: tonic-grpc
+    version: 0.0.1
+    url: "file://../tonic-grpc"
+    tags:
+      - tonic
+      - tonic-grpc
+      - grpc
+      - protobuf
+      - protocol-buffers
+  - name: react-admin
+    version: 0.0.1
+    url: "file://../react-admin"
+    tags:
+      - react
+      - react-admin
+      - frontend
+      - typescript
+sources:
+  - https://github.com/dinosath/protypo
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com
