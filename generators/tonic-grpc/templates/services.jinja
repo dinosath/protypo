@@ -9,34 +9,57 @@ to: {{ values.outputFolder }}/src/services/{{ file_name }}.rs
 message: "Proto file for `{{module_name}}` was created successfully."
 injections:
 - into: {{ values.outputFolder }}/build.rs
-  before: "//Inject proto files"
-  content: |
-    tonic_build::compile_protos("proto/{{ file_name }}.proto")?;
+  after: "tonic_build::configure\\(\\)"
+  content: "\t\t.file_descriptor_set_path(out_dir.join(\"{{ file_name }}_descriptor.bin\"))"
+
+- into: {{ values.outputFolder }}/build.rs
+  after: "let proto_files"
+  content: "\t\t\"proto/{{ file_name }}.proto\","
+
+- into: {{ values.outputFolder }}/src/main.rs
+  after: ".add_service\\(health_service\\)"
+  content: "\t\t.add_service(services::{{ file_name }}::grpc_api::crud_server::CrudServer::new(services::{{ file_name }}::MyCrud::default()))"
+- into: {{ values.outputFolder }}/src/services/mod.rs
+  append: true
+  content: "pub mod {{ file_name }};"
+- into: {{ values.outputFolder }}/src/main.rs
+  after: "tonic_reflection::server::Builder::configure"
+  content: "\t\t.register_encoded_file_descriptor_set(services::{{ file_name }}::grpc_api::FILE_DESCRIPTOR_SET)"
 ---
-use {{ file_name }}::crud_server::{Crud, CrudServer};
+use tonic::{Request, Response, Status};
+use tonic::codegen::tokio_stream::wrappers::ReceiverStream;
+use grpc_api::{ {{ file_name}}_repo::{{ message }}, crud_server::Crud, UpdateRequest};
 
-pub mod {{ file_name }} {
-    tonic::include_proto!("{{ file_name }}");
+pub mod grpc_api {
+    tonic::include_proto!("grpc.api.{{ file_name }}");
+    pub(crate) const FILE_DESCRIPTOR_SET: &[u8] = tonic::include_file_descriptor_set!("{{ file_name }}_descriptor");
 }
-
-
 
 #[derive(Debug, Default)]
 pub struct MyCrud {}
 
 #[tonic::async_trait]
 impl Crud for MyCrud {
-    async fn say_hello(
-        &self,
-        request: Request<HelloRequest>, // Accept request of type HelloRequest
-    ) -> Result<Response<HelloReply>, Status> { // Return an instance of type HelloReply
-        println!("Got a request: {:?}", request);
+    async fn create(&self, request: Request<{{ message }}>) -> Result<Response<{{ message }}>, Status> {
+        todo!()
+    }
 
-        let reply = HelloReply {
-            message: format!("Hello {}!", request.into_inner().name), // We must use .into_inner() as the fields of gRPC requests and responses are private
-        };
+    type GetListStream = ReceiverStream<Result<{{ message }}, Status>>;
 
-        Ok(Response::new(reply)) // Send back our formatted greeting
+    async fn get_list(&self, request: Request<()>) -> Result<Response<Self::GetListStream>, Status> {
+        todo!()
+    }
+
+    async fn get_one(&self, request: Request<i64>) -> Result<Response<{{ message }}>, Status> {
+        todo!()
+    }
+
+    async fn update(&self, request: Request<UpdateRequest>) -> Result<Response<{{ message }}>, Status> {
+        todo!()
+    }
+
+    async fn delete(&self, request: Request<i64>) -> Result<Response<bool>, Status> {
+        todo!()
     }
 }
 

@@ -14,6 +14,8 @@ panic = "abort"
 [dependencies]
 tokio = { version = "1.43", features = ["rt-multi-thread", "macros"] }
 prost = "0.13"
+prost-reflect = { version = "^0.14.3", default-features = false, features = ["derive", "text-format"] }
+prost-types = "0.13"
 tonic = { version = "0.12" }
 # Optional dependencies
 tonic-web = "0.12"
@@ -22,3 +24,5 @@ tonic-reflection = "0.12"
 
 [build-dependencies]
 tonic-build = { version = "0.12", features = ["prost"] }
+prost-build = "0.13"
+prost-reflect-build = "0.14"
