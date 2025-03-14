@@ -1,5 +1,5 @@
 {# generate controllers #}
-{% import "_macros.jinja" as macros %}
+{% import "_macros.jinja" as macros -%}
 
 {% for entity_name,entity in entities | items -%}
 {% if entity.properties -%}

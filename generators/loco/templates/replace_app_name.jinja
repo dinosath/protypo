@@ -1,4 +1,5 @@
 {# change app_name in all files #}
+{% import "_macros.jinja" as macros -%}
 {% set app_name= values.application.name %}
 {% if app_name -%}
 message: "Set app name to {{ app_name }}"
@@ -22,8 +23,8 @@ injections:
   append: true
   content: "POSTGRES_PASSWORD={{ fake('Password') }}"
 - into: {{ values.outputFolder }}/.env
-  append: true
-  content: "JWT_SECRET={{ fake('Password') }}"
+  after: "DATABASE_URL"
+  content: "JWT_SECRET={{ macros.generate_jwt_secret_key() | trim }}"
 ---
 // Add tenant_id to the entity
 {% endif -%}
