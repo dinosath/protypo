@@ -10,7 +10,7 @@ const USER_EMAIL: &str = "test@loco.com";
 const USER_PASSWORD: &str = "1234";
 
 pub struct LoggedInUser {
-    pub user: users::Model,
+    pub user: Model,
     pub token: String,
 }
 
@@ -26,7 +26,7 @@ pub async fn init_user_login(request: &TestServer, ctx: &AppContext) -> LoggedIn
         .post("/api/auth/register")
         .json(&register_payload)
         .await;
-    let user = users::Model::find_by_email(&ctx.db, USER_EMAIL)
+    let user = Model::find_by_email(&ctx.db, USER_EMAIL)
         .await
         .unwrap();
 
@@ -47,7 +47,7 @@ pub async fn init_user_login(request: &TestServer, ctx: &AppContext) -> LoggedIn
     let login_response: LoginResponse = serde_json::from_str(&response.text()).unwrap();
 
     LoggedInUser {
-        user: users::Model::find_by_email(&ctx.db, USER_EMAIL)
+        user: Model::find_by_email(&ctx.db, USER_EMAIL)
             .await
             .unwrap(),
         token: login_response.token,

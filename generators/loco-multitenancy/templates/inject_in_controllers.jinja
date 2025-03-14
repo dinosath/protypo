@@ -1,43 +1,27 @@
 {# inject tenant in controller.rs #}
 {% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
-{% set tenant_name = (values.application.multitenancy.alias | default('company')) | snake_case -%}
+{% set tenant_name = (values.application.multitenancy['entity-alias'] | default('company')) | snake_case -%}
 {% for entity_name,entity in entities | items  | rejectattr("0","eq", tenant_name) -%}
 {% set file_name = entity.title | snake_case -%}
 ---
 message: "Controller `{{module_name}}` was injected with multitenancy changes."
 injections:
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  replace_all: "&ctx.db"
-  content: "&txn"
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  replace: "load_item\\(db: &DbConn"
-  content: "load_item(db: &sea_orm::DatabaseTransaction"
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   after: "use super::utils::\\{"
   inline: true
   content: "begin_tenant_transaction, "
+
+{#
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  after_all: "\\.prefix\\(\"api\\/"
-  inline: true
-  content: "{{ tenant_name | plural }}/:{{tenant_name}}_id/"
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  after_all: "DbConn>,"
-  inline: true
-  content: "Path({{ tenant_name }}_id):Path<i32>,"
+  replace_all: "&ctx.db"
+  content: "&txn"
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   after_all: "State<AppContext>"
   content: "\tlet txn = begin_tenant_transaction(&ctx.db, {{ tenant_name }}_id).await?;"
 - into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  after_all: "(add|list)\\(State\\(ctx\\): State<AppContext>,"
-  inline: true
-  content: "Path({{ tenant_name }}_id): Path<i32>,"
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
-  replace_all: "Path\\(id\\): Path<i32>"
-  content: "Path(({{ tenant_name }}_id, id)): Path<(i32,i32)>"
-- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
   before_all: "Ok\\(Json\\(model\\)\\)"
   content: "\ttxn.commit().await.context(\"failed to commit transaction\")?;"
-
+#}
 ---
 // Add tenant_id to the controller
 {% endfor -%}

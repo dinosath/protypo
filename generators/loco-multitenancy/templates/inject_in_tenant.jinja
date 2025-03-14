@@ -1,0 +1,26 @@
+{# inject tenant in controller.rs #}
+{% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
+{% set tenant_name = (values.application.multitenancy['entity-alias'] | default('company')) | snake_case -%}
+{% set file_name = tenant_name | snake_case -%}
+---
+message: "Controller `{{module_name}}` was injected with multitenancy changes."
+injections:
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after: ".prefix"
+  content: "\t\t.add(\"/{id}\", post(set_active))"
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  after: "use sea_orm"
+  content: "use sea_orm::{DatabaseBackend, Statement};"
+- into: {{ values.outputFolder }}/src/controllers/{{ file_name }}.rs
+  before_last: "#\\[debug_handler\\]"
+  content: |
+   #[debug_handler]
+   #[tracing::instrument(skip(ctx))]
+   pub async fn set_active(State(ctx): State<AppContext>, Path(id): Path<i32>) -> Result<Response> {
+       let query = r#"WITH deactivate AS (UPDATE app.workspace_users SET active = FALSE WHERE app_user = $1 AND active = TRUE) UPDATE app.workspace_users SET active = TRUE WHERE app_user = $1 AND workspace = $2;"#;
+       ctx.db.execute(Statement::from_sql_and_values(DatabaseBackend::Postgres, query, vec![id.into()])).await?;
+       format::empty()
+   }
+---
+// Inject in tenant controller
+{% endif -%}

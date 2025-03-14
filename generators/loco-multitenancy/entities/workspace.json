@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "workspace",
+  "type": "object",
+  "order": 0,
+  "properties": {
+    "name": {
+      "type": "string",
+      "maxLength": 100,
+      "x-unique": true
+    },
+    "slug": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "logo": {
+      "type": "string",
+      "format": "url"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

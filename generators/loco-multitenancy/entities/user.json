@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User",
+  "type": "object",
+  "order": 1,
+  "properties": {
+    "extra_data": {
+      "type": "object"
+    },
+    "username": {
+      "type": "string",
+      "x-unique": true
+    },
+    "pid": {
+      "type": "string",
+      "format": "uuid",
+      "readOnly": true
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "x-unique": true
+    },
+    "password": {
+      "type": "string",
+      "writeOnly": true
+    },
+    "apiKey": {
+      "type": "string",
+      "x-unique": true
+    },
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    },
+    "resetToken": {
+      "type": "string",
+      "readOnly": true
+    },
+    "resetSentAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "emailVerificationToken": {
+      "type": "string",
+      "readOnly": true
+    },
+    "emailVerificationSentAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "emailVerifiedAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "magicLinkToken": {
+      "type": "string"
+    },
+    "magicLinkExpiration": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "apiKey",
+    "email",
+    "username",
+    "pid",
+    "password"
+  ]
+}

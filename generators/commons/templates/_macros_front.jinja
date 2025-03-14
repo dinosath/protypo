@@ -66,7 +66,7 @@ readOnly
     {% elif enum in property %}
         SelectField choices={[
             {%- for enum in property.enum -%}
-               { name: '{{ enum }}' }{%- if not loop.last -%},{% endif -%}
+               { name: '{{ enum }}' }{{ ',' if not loop.last }}
             {%- endfor -%}
             ]}
     {% elif macros.relation_is_many_to_one(property)=='true' -%}

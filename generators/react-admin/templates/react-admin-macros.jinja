@@ -45,7 +45,7 @@
 {%- filter trim -%}
 {%- if 'enum' in object -%}
 choices={[
-{%- for enum in object.enum -%}{ id: '{{ enum }}', name: '{{ enum }}' }{%- if not loop.last -%},{% endif -%}{%- endfor -%}]}
+{%- for enum in object.enum -%}{ id: '{{ enum }}', name: '{{ enum }}' }{{ ',' if not loop.last }}{%- endfor -%}]}
 {% endif -%}
 {%- endfilter -%}
 {%- endmacro -%}
