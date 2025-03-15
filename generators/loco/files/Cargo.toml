@@ -25,20 +25,11 @@ axum = "0.7.5"
 include_dir = "0.7"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
 
-# view engine i18n
-fluent-templates = { version = "0.8.0", features = ["tera"] }
-unic-langid = "0.9.4"
-# /view engine
-
 [[bin]]
 name = "myapp-cli"
 path = "src/bin/main.rs"
 required-features = []
 
-[[bin]]
-name = "tool"
-path = "src/bin/tool.rs"
-required-features = []
 
 [dev-dependencies]
 fake = "4.0.0"
