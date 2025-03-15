@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "invitation",
+  "type": "object",
+  "order": 3,
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "role": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "role.json"
+      },
+      "x-relationship": "many-to-many"
+    },
+    "expiration": {
+      "type": "integer",
+      "default": 30
+    },
+    "expiration_unit": {
+      "type": "string",
+      "enum": [
+        "days",
+        "weeks",
+        "months",
+        "years"
+      ],
+      "default": "days"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "revoked"
+      ],
+      "default": "pending"
+    },
+    "workspace": {
+      "type": "object",
+      "$ref": "workspace.json",
+      "x-relationship": "many-to-one"
+    }
+  },
+  "required": [
+    "permissions",
+    "user",
+    "workspace"
+  ]
+}

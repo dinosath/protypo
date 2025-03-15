@@ -9,12 +9,15 @@
       "maxLength": 150,
       "x-unique": true
     },
-    "list": {
-      "type": "object",
-      "$ref": "list.json",
-      "x-relationship": "many-to-one"
+    "invoices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "invoice.json"
+      },
+      "x-relationship": "many-to-many"
     },
-    "items": {
+    "favorites": {
       "type": "array",
       "items": {
         "$ref": "item.json"

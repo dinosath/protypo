@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "member",
+  "type": "object",
+  "order": 2,
+  "properties": {
+    "extra_data": {
+      "type": "object"
+    },
+    "workspaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "workspace.json"
+      },
+      "x-relationship": "many-to-many"
+    },
+    "app_user": {
+      "type": "object",
+      "$ref": "user.json",
+      "x-relationship": "one-to-one"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "role.json"
+      },
+      "x-relationship": "many-to-many"
+    },
+    "joined_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "active": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "username",
+    "pid",
+    "password"
+  ]
+}

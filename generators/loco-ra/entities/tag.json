@@ -16,10 +16,10 @@
       },
       "x-relationship": "many-to-many"
     },
-    "lists": {
+    "invoices": {
       "type": "array",
       "items": {
-        "$ref": "list.json"
+        "$ref": "invoice.json"
       },
       "x-relationship": "many-to-many"
     }

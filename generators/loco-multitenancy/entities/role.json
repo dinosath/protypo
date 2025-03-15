@@ -1,40 +1,42 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "workspace",
+  "title": "Role",
   "type": "object",
-  "order": 0,
+  "order": 1,
   "properties": {
     "name": {
-      "type": "string",
-      "unique": true
-    },
-    "slug": {
       "type": "string"
     },
     "description": {
       "type": "string"
     },
-    "roles": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "$ref": "role.json"
-      },
-      "x-relationship": "many-to-many"
-    },
     "members": {
       "type": "array",
       "items": {
+        "type": "object",
         "$ref": "member.json"
       },
       "x-relationship": "many-to-many"
     },
-    "logo": {
-      "type": "string",
-      "format": "url"
+    "workspaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "workspace.json"
+      },
+      "x-relationship": "many-to-many"
+    },
+    "invitations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "invitation.json"
+      },
+      "x-relationship": "many-to-many"
     }
   },
   "required": [
-    "name"
+    "name",
+    "description"
   ]
 }

@@ -12,10 +12,13 @@
     "checked": {
       "type": "boolean"
     },
-    "list": {
-      "type": "object",
-      "$ref": "list.json",
-      "x-relationship": "many-to-one"
+    "invoice": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "invoice.json"
+      },
+      "x-relationship": "many-to-many"
     },
     "color": {
       "type": "string",
