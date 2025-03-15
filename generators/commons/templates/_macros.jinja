@@ -317,11 +317,8 @@ true
 {% endfilter -%}
 {% endmacro -%}
 
-{% macro generate_jwt_secret_key(length=32) -%}
-    {%- set choices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-                      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-                      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] -%}
-
+{% macro generate_jwt_secret_key(length=20) -%}
+    {%- set choices = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' -%}
     {%- set ns = namespace(secret_key=[]) -%}
 
     {%- for _ in range(length) -%}

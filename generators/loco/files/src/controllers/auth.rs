@@ -25,9 +25,9 @@ impl LoginResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RegisterParams {
+    pub username: String,
     pub email: String,
     pub password: String,
-    pub name: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -49,11 +49,8 @@ pub struct ResetParams {
 /// Register function creates a new user with the given parameters and sends a
 /// welcome email to the user
 #[debug_handler]
-async fn register(
-    State(ctx): State<AppContext>,
-    Json(params): Json<RegisterParams>,
-) -> Result<Response> {
-    let res = Model::create_with_password(&ctx.db, &params.email, &params.password).await;
+async fn register(State(ctx): State<AppContext>, Json(params): Json<RegisterParams>,) -> Result<Response> {
+    let res = Model::create_with_password(&ctx.db, &params.username, &params.email, &params.password).await;
 
     let user = match res {
         Ok(user) => user,
@@ -78,10 +75,7 @@ async fn register(
 /// Verify register user. if the user not verified his email, he can't login to
 /// the system.
 #[debug_handler]
-async fn verify(
-    State(ctx): State<AppContext>,
-    Json(params): Json<VerifyParams>,
-) -> Result<Response> {
+async fn verify(State(ctx): State<AppContext>, Json(params): Json<VerifyParams>, ) -> Result<Response> {
     let user = Model::find_by_verification_token(&ctx.db, &params.token).await?;
 
     if user.email_verified_at.is_some() {
@@ -150,7 +144,7 @@ async fn login(State(ctx): State<AppContext>, Json(params): Json<LoginParams>) -
 
     let token = user
         .generate_jwt(&jwt_secret.secret, &jwt_secret.expiration)
-        .or_else(|_| unauthorized("unauthorized!"))?;
+        .or_else(|e| unauthorized("unauthorized!"))?;
 
     format::json(LoginResponse::new(&token))
 }

@@ -89,41 +89,42 @@ injections:
               hash::verify_password(password, &self.password)
           }
 
-          /// Asynchronously creates a user with a password and saves it to the
-          /// database.
-          ///
-          /// # Errors
-          ///
-          /// When could not save the user into the DB
-          pub async fn create_with_password(db: &DatabaseConnection, email: &String, password: &String) -> ModelResult<Self> {
-              let txn = db.begin().await?;
+        /// Asynchronously creates a user with a password and saves it to the
+        /// database.
+        ///
+        /// # Errors
+        ///
+        /// When could not save the user into the DB
+        pub async fn create_with_password(db: &DatabaseConnection, username: &String, email: &String, password: &String) -> ModelResult<Self> {
+            let txn = db.begin().await?;
 
-              if Entity::find()
-                  .filter(
-                      model::query::condition()
-                          .eq(Column::Email, email)
-                          .build(),
-                  )
-                  .one(&txn)
-                  .await?
-                  .is_some()
-              {
-                  return Err(ModelError::EntityAlreadyExists {});
-              }
+            if Entity::find()
+                .filter(
+                    model::query::condition()
+                        .eq(Column::Email, email)
+                        .build(),
+                )
+                .one(&txn)
+                .await?
+                .is_some()
+            {
+                return Err(ModelError::EntityAlreadyExists {});
+            }
 
-              let password_hash = hash::hash_password(password).map_err(|e| ModelError::Any(e.into()))?;
-              let user = ActiveModel {
-                  email: Set(email.to_string()),
-                  password: Set(password_hash),
-                  ..Default::default()
-              }
-                  .insert(&txn)
-                  .await?;
+            let password_hash = hash::hash_password(password).map_err(|e| ModelError::Any(e.into()))?;
+            let user = ActiveModel {
+                username: Set(username.clone()),
+                email: Set(email.to_string()),
+                password: Set(password_hash),
+                ..Default::default()
+            }
+                .insert(&txn)
+                .await?;
 
-              txn.commit().await?;
+            txn.commit().await?;
 
-              Ok(user)
-          }
+            Ok(user)
+        }
 
           /// Creates a JWT
           ///

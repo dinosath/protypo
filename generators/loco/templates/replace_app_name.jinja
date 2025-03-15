@@ -23,7 +23,7 @@ injections:
   append: true
   content: "POSTGRES_PASSWORD={{ fake('Password') }}"
 - into: {{ values.outputFolder }}/.env
-  after: "DATABASE_URL"
+  append: true
   content: "JWT_SECRET={{ macros.generate_jwt_secret_key() | trim }}"
 ---
 // Add tenant_id to the entity
