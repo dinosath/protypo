@@ -13,7 +13,7 @@ use loco_rs::{
 use migration::Migrator;
 use sea_orm::DatabaseConnection;
 use std::path::Path;
-use crate::{controllers, models};
+use crate::{controllers};
 
 pub struct App;
 #[async_trait]

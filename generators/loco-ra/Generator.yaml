@@ -19,14 +19,6 @@ dependencies:
       - seaorm
       - loco
       - rust
-  - name: loco-multitenancy
-    version: 0.0.1
-    url: "file://../loco-multitenancy"
-    tags:
-      - seaorm
-      - loco
-      - rust
-      - multitenancy
   - name: react-admin
     version: 0.0.1
     url: "file://../react-admin"

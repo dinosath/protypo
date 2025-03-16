@@ -318,3 +318,14 @@ true
 {{ entity.title | plural | snake_case }}
 {% endfilter -%}
 {% endmacro -%}
+
+{% macro generate_jwt_secret_key(length=20) -%}
+    {%- set choices = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' -%}
+    {%- set ns = namespace(secret_key=[]) -%}
+
+    {%- for _ in range(length) -%}
+        {%- set ns.secret_key = ns.secret_key + [ choices | random ] -%}
+    {%- endfor -%}
+
+    {{ ns.secret_key | join('') | trim }}
+{% endmacro -%}

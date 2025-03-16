@@ -1,5 +1,5 @@
 {# generate controllers #}
-{% import "_macros.jinja" as macros %}
+{% import "_macros.jinja" as macros -%}
 
 {% for entity_name,entity in entities | items -%}
 {% if entity.properties -%}
@@ -20,7 +20,7 @@ injections:
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::unnecessary_struct_initialization)]
 #![allow(clippy::unused_async)]
-use loco_rs::prelude::*;
+use loco_rs::{prelude::*, controller::middleware};
 use serde::{Deserialize, Serialize};
 use axum::{debug_handler,extract::Query};
 {{ macros.seaorm_prelude_imports(entity)|trim }}
@@ -76,7 +76,7 @@ where
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn list(State(ctx): State<AppContext>, Query(params): Query<ListParams>) -> Result<Response> {
+pub async fn list(jwt: auth::JWT, State(ctx): State<AppContext>, Query(params): Query<ListParams>) -> Result<Response> {
     let ids = params.ids.unwrap_or_default();
 
     let mut query = {% if m2m_relationships | length > 0 -%}Entity::select_with_relations();{% else -%}Entity::find();{% endif %}
@@ -90,7 +90,7 @@ pub async fn list(State(ctx): State<AppContext>, Query(params): Query<ListParams
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn add(State(ctx): State<AppContext>, Json(params): Json<Params>) -> Result<Response> {
+pub async fn add(jwt: auth::JWT, State(ctx): State<AppContext>, Json(params): Json<Params>) -> Result<Response> {
     let mut item = ActiveModel {
         ..Default::default()
     };
@@ -108,7 +108,7 @@ pub async fn add(State(ctx): State<AppContext>, Json(params): Json<Params>) -> R
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn update(State(ctx): State<AppContext>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<Response> {
+pub async fn update(jwt: auth::JWT, State(ctx): State<AppContext>, Path(id): Path<i32>, Json(params): Json<Params> ) -> Result<Response> {
     let item = load_item(&ctx.db, id).await?;
     let mut item = item.into_active_model();
     params.update(&mut item);
@@ -127,14 +127,14 @@ pub async fn update(State(ctx): State<AppContext>, Path(id): Path<i32>, Json(par
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn remove(State(ctx): State<AppContext>, Path(id): Path<i32>) -> Result<Response> {
+pub async fn remove(jwt: auth::JWT, State(ctx): State<AppContext>, Path(id): Path<i32>) -> Result<Response> {
     load_item(&ctx.db, id).await?.delete(&ctx.db).await?;
     format::empty()
 }
 
 #[debug_handler]
 #[tracing::instrument(skip(ctx))]
-pub async fn get_one(State(ctx): State<AppContext>, Path(id): Path<i32>) -> Result<Response> {
+pub async fn get_one(jwt: auth::JWT, State(ctx): State<AppContext>, Path(id): Path<i32>) -> Result<Response> {
     format::json(load_item(&ctx.db, id).await?)
 }
 
