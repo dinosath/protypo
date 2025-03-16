@@ -8,9 +8,9 @@ keywords:
   - shadcn
   - frontend
 dependencies:
-  - name: jsonschema-commons
+  - name: commons
     version: 0.0.1
-    url: "file://../jsonschema-commons"
+    url: "file://../commons"
     tags:
       - jsonschema
       - commons

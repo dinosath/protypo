@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "list",
+    "type": "object",
+    "order" : 2,
+    "properties": {
+        "title": {
+            "type": "string",
+            "x-unique": true
+        },
+        "description": {
+            "type": "string"
+        },
+        "tags": {
+            "type": "array",
+            "items": {
+                "$ref": "tag.json"
+            },
+            "x-relationship": "many-to-many"
+        },
+        "customers": {
+            "type": "array",
+            "items": {
+                "$ref": "customer.json"
+            },
+            "x-relationship": "many-to-many"
+        }
+    },
+    "required": [
+        "name",
+        "title"
+    ]
+}

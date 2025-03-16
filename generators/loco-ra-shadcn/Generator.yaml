@@ -1,0 +1,33 @@
+apiVersion: 0.0.1
+name: loco-ra
+version: 0.0.1
+description: Code generator for rust projects using the loco framework as the backend and react-admin as the frontend
+keywords:
+  - rust
+  - loco
+  - web-framework
+  - rest
+  - seaorm
+  - react
+  - react-admin
+  - fullstack
+dependencies:
+  - name: loco
+    version: 0.0.1
+    url: "file://../loco"
+    tags: 
+      - seaorm
+      - loco
+      - rust
+  - name: ra-shadcn
+    version: 0.0.1
+    url: "file://../ra-shadcn"
+    tags: 
+      - react
+      - react-admin
+      - shadcn
+sources:
+  - https://github.com/dinosath/schemas
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com
