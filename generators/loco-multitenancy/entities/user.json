@@ -4,6 +4,9 @@
   "type": "object",
   "order": 1,
   "properties": {
+    "extra_data": {
+      "type": "object"
+    },
     "username": {
       "type": "string",
       "x-unique": true
@@ -24,7 +27,7 @@
     },
     "apiKey": {
       "type": "string",
-      "readOnly": true
+      "x-unique": true
     },
     "firstName": {
       "type": "string"
@@ -55,18 +58,19 @@
       "format": "date-time",
       "readOnly": true
     },
-    "roles": {
-      "type": "array",
-      "items": {
-        "$ref": "Role.json"
-      },
-      "x-relationship": "many-to-many"
+    "magicLinkToken": {
+      "type": "string"
+    },
+    "magicLinkExpiration": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
+    "apiKey",
+    "email",
     "username",
     "pid",
-    "password",
-    "apiKey"
+    "password"
   ]
 }

@@ -22,6 +22,7 @@ use bon::bon;
 use sea_orm::{JoinType, QuerySelect};
 use sea_orm::ActiveValue::Set;
 {% endif -%}
+use validator::Validate;
 {{ macros.enum_imports(entity) }}
 {{ macros.seaorm_prelude_imports(entity)|trim }}
 
@@ -31,12 +32,12 @@ use sea_orm::ActiveValue::Set;
 enum {{ name | pascal_case }}{
         {% for enum in property.enum -%}
         #[sea_orm(string_value = "{{ enum | snake_case }}")]
-        {{ enum }}{%- if not loop.last -%},{% endif -%}
+        {{ enum }}{{ ',' if not loop.last }}
         {% endfor %}
 }
 {% endfor -%}
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, Validate)]
 #[sea_orm(schema_name="{{ values.application.name | default('app') }}", table_name = "{{ table_name }}")]
 #[serde(rename_all = "camelCase")]
 pub struct Model {

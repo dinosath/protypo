@@ -1,10 +1,9 @@
-use std::path::Path;
-
 use async_trait::async_trait;
 use loco_rs::{
     app::{AppContext, Hooks, Initializer},
     bgworker::{BackgroundWorker, Queue},
     boot::{create_app, BootResult, StartMode},
+    config::Config,
     controller::AppRoutes,
     db::{self, truncate_table},
     environment::Environment,
@@ -13,6 +12,7 @@ use loco_rs::{
 };
 use migration::Migrator;
 use sea_orm::DatabaseConnection;
+use std::path::Path;
 use crate::{controllers};
 
 pub struct App;
@@ -32,8 +32,8 @@ impl Hooks for App {
         )
     }
 
-    async fn boot(mode: StartMode, environment: &Environment) -> Result<BootResult> {
-        create_app::<Self, Migrator>(mode, environment).await
+    async fn boot(mode: StartMode, environment: &Environment, config: Config) -> Result<BootResult> {
+        create_app::<Self, Migrator>(mode, environment, config).await
     }
 
     async fn initializers(_ctx: &AppContext) -> Result<Vec<Box<dyn Initializer>>> {
@@ -43,7 +43,7 @@ impl Hooks for App {
 
     fn routes(_ctx: &AppContext) -> AppRoutes {
         AppRoutes::with_default_routes()
-            .add_route(controllers::auth::routes())
+            .add_route(controllers::auth::routes()) // controller routes below
     }
 
     async fn connect_workers(ctx: &AppContext, queue: &Queue) -> Result<()> {
@@ -53,11 +53,11 @@ impl Hooks for App {
     fn register_tasks(tasks: &mut Tasks) {
     }
 
-    async fn truncate(db: &DatabaseConnection) -> Result<()> {
+    async fn truncate(_ctx: &AppContext) -> Result<()> {
         Ok(())
     }
 
-    async fn seed(db: &DatabaseConnection, base: &Path) -> Result<()> {
+    async fn seed(_ctx: &AppContext, path: &Path) -> Result<()> {
         Ok(())
     }
 }

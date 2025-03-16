@@ -2,14 +2,14 @@
 {% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
 {% set file_name = "migration_00000002_add_tenants" -%}
 
-to: {{ values.outputFolder }}/src/{{ file_name }}.rs
+to: {{ values.outputFolder }}/migration/src/{{ file_name }}.rs
 message: "Migration `{{ file_name }}.rs` was added successfully."
 injections:
-- into: {{ values.outputFolder }}/src/lib.rs
+- into: {{ values.outputFolder }}/migration/src/lib.rs
   before: "pub struct Migrator;"
   content: "mod {{ file_name }};"
-- into: {{ values.outputFolder }}/src/lib.rs
-  before: "//Add your migration here"
+- into: {{ values.outputFolder }}/migration/src/lib.rs
+  before: "// inject-above"
   content: "Box::new({{ file_name }}::Migration),"
 ---
 use sea_orm::Statement;

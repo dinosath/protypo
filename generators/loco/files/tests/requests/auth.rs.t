@@ -35,7 +35,7 @@ async fn can_register() {
         });
 
         let _response = request.post("/api/auth/register").json(&payload).await;
-        let saved_user = users::Model::find_by_email(&ctx.db, email).await;
+        let saved_user = Model::find_by_email(&ctx.db, email).await;
 
         with_settings!({
             filters => testing::cleanup_user_model()
@@ -74,7 +74,7 @@ async fn can_login_with_verify(#[case] test_name: &str, #[case] password: &str) 
             .json(&register_payload)
             .await;
 
-        let user = users::Model::find_by_email(&ctx.db, email).await.unwrap();
+        let user = Model::find_by_email(&ctx.db, email).await.unwrap();
         let verify_payload = serde_json::json!({
             "token": user.email_verification_token,
         });
@@ -90,7 +90,7 @@ async fn can_login_with_verify(#[case] test_name: &str, #[case] password: &str) 
             .await;
 
         // Make sure email_verified_at is set
-        assert!(users::Model::find_by_email(&ctx.db, email)
+        assert!(Model::find_by_email(&ctx.db, email)
             .await
             .unwrap()
             .email_verified_at
@@ -156,7 +156,7 @@ async fn can_reset_password() {
         });
         _ = request.post("/api/auth/forgot").json(&forgot_payload).await;
 
-        let user = users::Model::find_by_email(&ctx.db, &login_data.user.email)
+        let user = Model::find_by_email(&ctx.db, &login_data.user.email)
             .await
             .unwrap();
         assert!(user.reset_token.is_some());
@@ -170,7 +170,7 @@ async fn can_reset_password() {
 
         let reset_response = request.post("/api/auth/reset").json(&reset_payload).await;
 
-        let user = users::Model::find_by_email(&ctx.db, &user.email)
+        let user = Model::find_by_email(&ctx.db, &user.email)
             .await
             .unwrap();
 

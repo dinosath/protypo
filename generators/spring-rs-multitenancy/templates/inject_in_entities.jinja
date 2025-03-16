@@ -1,6 +1,6 @@
 {# inject tenant in controller.rs #}
 {% if 'multitenancy' in values.application and 'enabled' in values.application.multitenancy and values.application.multitenancy.enabled == true and values.application.multitenancy.type == 'column' -%}
-{% set tenant_name = (values.application.multitenancy.alias | default('company')) | snake_case -%}
+{% set tenant_name = (values.application.multitenancy['entity-alias'] | default('company')) | snake_case -%}
 {% for entity_name,entity in entities | items | rejectattr("0","eq", tenant_name)-%}
 {% set file_name = entity.title | snake_case -%}
 ---

@@ -71,7 +71,7 @@ impl MigrationTrait for Migration {
                         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{{ entity.title|snake_case }}') THEN
                             CREATE TYPE approval_status AS ENUM (
                                 {% for enum in entity.enum -%}
-                                '{{ enum }}'{%- if not loop.last -%},{% endif -%}
+                                '{{ enum }}'{{ ',' if not loop.last }}
                                 {% endfor %}
                             );
                         END IF;
@@ -131,7 +131,7 @@ enum {{ relation | pascal_case }} {
 pub enum {{ name | pascal_case }} {
 {% for enum in property.enum -%}
 #[iden = "{{ enum }}"]
-{{ enum }}{%- if not loop.last -%},{% endif -%}
+{{ enum }}{{ ',' if not loop.last }}
 {% endfor -%}
 }
 {% endif -%}
@@ -153,7 +153,7 @@ pub enum {{ entity.title | pascal_case }} {
     Enum,
 {% for enum in entity.enum -%}
     #[sea_orm(iden = "{{ enum }}")]
-    {{ enum }}{%- if not loop.last -%},{% endif -%}
+    {{ enum }}{{ ',' if not loop.last }}
 {% endfor %}
 }
 {% endif %}
