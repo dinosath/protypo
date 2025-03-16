@@ -1,0 +1,11 @@
+outputFolder: "./output"
+loco:
+  application:
+    name: app
+react-admin:
+  application:
+    name: app
+  outputFolder: "./output/frontend"
+
+seaorm-migration:
+  outputFolder: "./output/migration"

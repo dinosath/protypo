@@ -1,0 +1,34 @@
+apiVersion: 0.0.1
+name: loco-ra-multitenant
+version: 0.0.1
+description: Code generator for rust projects using the loco framework as the backend and react-admin as the frontend with multitenancy support
+keywords:
+  - rust
+  - loco
+  - web-framework
+  - rest
+  - seaorm
+  - react
+  - react-admin
+  - fullstack
+dependencies:
+  - name: loco-ra
+    version: 0.0.1
+    url: "file://../loco-ra"
+    tags: 
+      - seaorm
+      - loco
+      - rust
+  - name: loco-multitenancy
+    version: 0.0.1
+    url: "file://../loco-multitenancy"
+    tags:
+      - seaorm
+      - loco
+      - rust
+      - multitenancy
+sources:
+  - https://github.com/dinosath/schemas
+maintainers:
+  - name: Konstantinos Athanasiou
+    email: dinosath0@gmail.com
