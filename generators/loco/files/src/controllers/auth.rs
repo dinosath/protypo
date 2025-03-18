@@ -5,7 +5,7 @@ use crate::models::user::Model;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LoginParams {
-    pub email: String,
+    pub username: String,
     pub password: String,
 }
 
@@ -132,7 +132,7 @@ async fn reset(State(ctx): State<AppContext>, Json(params): Json<ResetParams>) -
 /// Creates a user login and returns a token
 #[debug_handler]
 async fn login(State(ctx): State<AppContext>, Json(params): Json<LoginParams>) -> Result<Response> {
-    let user = Model::find_by_email(&ctx.db, &params.email).await?;
+    let user = Model::find_by_username(&ctx.db, &params.username).await?;
 
     let valid = user.verify_password(&params.password);
 
