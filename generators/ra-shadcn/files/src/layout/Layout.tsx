@@ -1,5 +1,5 @@
 
-import { CoreLayoutProps, useResourceDefinitions, useResourceContext } from "ra-core";
+import { CoreLayoutProps, useResourceDefinitions, useResourceContext } from "react-admin";
 import { NavigationBar } from "./NavigationBar";
 import { UserMenu } from "./UserMenu";
 import { ModeToggle } from "@/components/mode-toggle"

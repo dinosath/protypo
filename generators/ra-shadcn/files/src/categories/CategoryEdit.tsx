@@ -1,7 +1,7 @@
 import { Breadcrumb, BreadcrumbItem } from "@/components/Breadcrumb";
 import { RaInput } from "@/components/RaInput";
 import { Button } from "@/components/ui/button";
-import { EditBase, Form, required, useEditContext } from "ra-core";
+import { EditBase, Form, required, useEditContext } from "react-admin";
 import { Link } from "react-router-dom";
 
 export const CategoryEdit = () => (

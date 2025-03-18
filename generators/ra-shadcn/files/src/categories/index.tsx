@@ -1,4 +1,4 @@
-import { ResourceProps } from "ra-core";
+import { ResourceProps } from "react-admin";
 import { CategoryList } from "./CategoryList";
 import { CategoryEdit } from "./CategoryEdit";
 

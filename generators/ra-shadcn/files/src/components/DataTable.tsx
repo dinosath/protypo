@@ -14,7 +14,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "./ui/table";
-import { useListContext } from "ra-core";
+import { useListContext } from "react-admin";
 import { ArrowDownAZ, ArrowUpZA } from "lucide-react";
 
 import { Button } from "./ui/button";

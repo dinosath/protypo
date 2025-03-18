@@ -12,7 +12,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useGetIdentity, useLogout } from "ra-core";
+import { useGetIdentity, useLogout } from "react-admin";
 
 export function UserMenu() {
     const { data: identity } = useGetIdentity();

@@ -1,4 +1,4 @@
-import { AuthProvider, HttpError } from "ra-core";
+import { AuthProvider, HttpError } from "react-admin";
 import data from "./users.json";
 
 /**

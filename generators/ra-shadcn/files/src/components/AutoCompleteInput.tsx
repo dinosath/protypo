@@ -28,7 +28,7 @@ import {
   useGetRecordRepresentation,
   useInput,
   useTranslate,
-} from "ra-core";
+} from "react-admin";
 import { FormError } from "./FormError";
 
 export const AutoCompleteInput = (

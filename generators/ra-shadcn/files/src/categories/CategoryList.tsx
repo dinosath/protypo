@@ -3,7 +3,7 @@ import { DataTable } from "@/components/DataTable";
 import { ReferenceManyCount } from "@/components/ReferenceManyCount";
 import { buttonVariants } from "@/components/ui/button";
 import { createColumnHelper } from "@tanstack/react-table";
-import { ListContextProvider, useListController } from "ra-core";
+import { ListContextProvider, useListController } from "react-admin";
 import { Link } from "react-router-dom";
 
 type Category = {

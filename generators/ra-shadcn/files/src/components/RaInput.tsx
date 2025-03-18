@@ -1,4 +1,4 @@
-import { InputProps, useInput, useTranslate } from "ra-core";
+import { InputProps, useInput, useTranslate } from "react-admin";
 import {
   FormControl,
   FormDescription,

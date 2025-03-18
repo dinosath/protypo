@@ -5,7 +5,7 @@ import { DataTableDemo } from "./DataTable";
 import { ReferenceField } from "@/components/ReferenceField";
 import { buttonVariants } from "@/components/ui/button";
 import { createColumnHelper } from "@tanstack/react-table";
-import { ListContextProvider, useListController } from "ra-core";
+import { ListContextProvider, useListController } from "react-admin";
 import { Link } from "react-router-dom";
 import {TasksPrimaryButtons} from "@/products/components/tasks-primary-buttons.tsx";
 import {tasks} from "@/products/data/tasks.ts";

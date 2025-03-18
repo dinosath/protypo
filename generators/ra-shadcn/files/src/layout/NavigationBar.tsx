@@ -8,7 +8,7 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { useGetList } from "ra-core";
+import { useGetList } from "react-admin";
 import { Link } from "react-router-dom";
 
 export const NavigationBar = () => {

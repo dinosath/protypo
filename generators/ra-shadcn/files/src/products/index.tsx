@@ -1,4 +1,4 @@
-import { ResourceProps } from "ra-core";
+import { ResourceProps } from "react-admin";
 import { ProductList } from "./ProductList";
 import { ProductEdit } from "./ProductEdit";
 

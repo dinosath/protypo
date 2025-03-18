@@ -1,4 +1,4 @@
-import { useRecordContext } from "ra-core";
+import { useRecordContext } from "react-admin";
 import get from "lodash/get";
 import { Badge } from "./ui/badge";
 

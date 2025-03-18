@@ -26,7 +26,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { CoreLayoutProps,useResourceDefinitions } from "ra-core";
+import { CoreLayoutProps,useResourceDefinitions } from "react-admin";
 
 // This is sample data.
 const data = {

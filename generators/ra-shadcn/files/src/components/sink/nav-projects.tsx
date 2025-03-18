@@ -24,7 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { CoreLayoutProps,useResourceDefinitions } from "ra-core";
+import { CoreLayoutProps,useResourceDefinitions } from "react-admin";
 
 export function NavProjects({
   projects,

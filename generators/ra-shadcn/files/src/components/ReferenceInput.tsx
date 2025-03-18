@@ -4,7 +4,7 @@ import {
 	ResourceContextProvider,
 	UseReferenceInputControllerParams,
 	useReferenceInputController,
-} from "ra-core";
+} from "react-admin";
 import { Children, ReactNode } from "react";
 
 export const ReferenceInput = (props: ReferenceInputProps) => {

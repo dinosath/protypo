@@ -12,7 +12,7 @@ import {
   useReference,
   useResourceDefinition,
   useTranslate,
-} from "ra-core";
+} from "react-admin";
 import { ReactNode, memo } from "react";
 import { Link } from "react-router-dom";
 import { UseQueryOptions } from "@tanstack/react-query";

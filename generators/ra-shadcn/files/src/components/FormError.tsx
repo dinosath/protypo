@@ -1,4 +1,4 @@
-import { ValidationError } from "ra-core";
+import { ValidationError } from "react-admin";
 import { ControllerFieldState } from "react-hook-form";
 
 export const FormError = (props: { fieldState: ControllerFieldState }) => {
