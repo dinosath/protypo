@@ -1,0 +1,48 @@
+to: {{ values.outputFolder }}/src/authProvider.ts
+message: "File for ui `package.json` was created successfully."
+---
+const url = "";
+
+const authProvider = {
+
+    login: ({username, password}) => {
+        const request = new Request(`${url}/api/auth/login`, {
+            method: 'POST',
+            body: JSON.stringify({username, password}),
+            headers: new Headers({'Content-Type': 'application/json'}),
+        });
+        return fetch(request)
+            .then(response => {
+                if (response.status < 200 || response.status >= 300) {
+                    throw new Error(response.statusText);
+                }
+                return response.json();
+            })
+            .then(auth => {
+                console.log("auth:", JSON.stringify(auth));
+                let token = `Bearer ${auth.token}`;
+                console.log("token:", token);
+                localStorage.setItem('token', token);
+            })
+            .catch(() => {
+                throw new Error('Network error')
+            });
+    },
+    logout: () => {
+        localStorage.removeItem('token');
+        return Promise.resolve();
+    },
+    checkAuth: () => {
+        return localStorage.getItem('token')
+            ? Promise.resolve()
+            : Promise.reject();
+
+    },
+    getPermissions: () => {
+        // Required for the authentication to work
+        return Promise.resolve();
+    },
+    // ...
+};
+
+export default authProvider;

@@ -1,0 +1,10 @@
+outputFolder: "./output"
+loco:
+  application:
+    name: app
+
+ra-shadcn:
+  outputFolder: "./output/frontend"
+
+seaorm-migration:
+  outputFolder: "./output/migration"
